@@ -22,7 +22,7 @@ const strings = {
   pointsShort: { de: 'Pkt.', en: 'pts' },
   lessonDone: { de: 'Lektion geschafft', en: 'Lesson complete' },
   xpEarned: { de: 'XP verdient', en: 'XP earned' },
-  accuracy: { de: 'Richtig beantwortet', en: 'Answered correctly' },
+  accuracy: { de: 'Treffer', en: 'Accuracy' },
   streak: { de: 'Tage in Folge', en: 'day streak' },
   dailyGoal: { de: 'Tagesziel', en: 'Daily goal' },
   mistakes: { de: 'Fehler wiederholen', en: 'Review mistakes' },
@@ -30,7 +30,7 @@ const strings = {
     de: 'Noch keine Fehler. Mach eine Lektion, dann sammeln sich hier deine schwierigen Fragen.',
     en: 'No mistakes yet. Do a lesson and your tricky questions will collect here.',
   },
-  examTitle: { de: 'Prüfungssimulation Klasse B', en: 'Class B exam simulation' },
+  examTitle: { de: 'Prüfungs\u00ADsimulation Klasse B', en: 'Class B exam simulation' },
   examRules: {
     de: '30 Fragen, keine Zeitbegrenzung. Bestanden mit höchstens 10 Fehlerpunkten – aber zwei falsche 5-Punkte-Fragen bedeuten durchgefallen.',
     en: '30 questions, no time limit. Pass with at most 10 error points, but two wrong 5-point questions mean a fail.',
@@ -97,6 +97,10 @@ const strings = {
   yourAnswer: { de: 'Deine Antwort', en: 'Your answer' },
   noAnswer: { de: 'Keine Antwort', en: 'No answer' },
   backToPath: { de: 'Zurück zum Lernpfad', en: 'Back to the path' },
+  delete: { de: 'Löschen', en: 'Delete' },
+  combo: { de: '{n} richtig in Folge!', en: '{n} in a row!' },
+  goalReached: { de: 'Tagesziel erreicht!', en: 'Daily goal reached!' },
+  bestCombo: { de: 'Beste Serie', en: 'Best streak' },
 } satisfies Record<string, LocalizedText>;
 
 export type StringKey = keyof typeof strings;
@@ -105,4 +109,21 @@ export function t(key: StringKey, locale: Locale, vars: Record<string, string | 
   let text = tr(strings[key], locale);
   for (const [name, value] of Object.entries(vars)) text = text.replace(`{${name}}`, String(value));
   return text;
+}
+
+/** Short, varied reactions so feedback never feels repetitive. */
+const REACTIONS = {
+  correct: {
+    de: ['Richtig!', 'Super!', 'Freie Fahrt!', 'Klasse!', 'Genau so!'],
+    en: ['Correct!', 'Great!', 'Clear road ahead!', 'Nice one!', 'Exactly!'],
+  },
+  wrong: {
+    de: ['Nicht ganz.', 'Kurzer Stopp.', 'Fast!', 'Noch mal hinschauen.'],
+    en: ['Not quite.', 'Quick stop.', 'Almost!', 'Take another look.'],
+  },
+} as const;
+
+export function reaction(kind: keyof typeof REACTIONS, locale: Locale, seed: number): string {
+  const list = REACTIONS[kind][locale];
+  return list[Math.abs(seed) % list.length];
 }

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { mastery } from '@/domain/srs';
 import { useAppState } from '@/state/app-state';
 import { AppText, Card, ProgressBar, RaisedButton } from '@/ui/components';
+import { Mascot } from '@/ui/mascot';
 import { t } from '@/ui/i18n';
 import { colors, space } from '@/ui/theme';
 
@@ -20,7 +21,12 @@ export default function ExamTab() {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="display">{t('examTitle', locale)}</AppText>
+        <View style={styles.hero}>
+          <Mascot mood={readiness >= 0.8 ? 'happy' : 'curious'} size={84} />
+          <View style={styles.flex}>
+            <AppText variant="display">{t('examTitle', locale)}</AppText>
+          </View>
+        </View>
         <AppText color={colors.slate}>{t('examRules', locale)}</AppText>
 
         <Card style={styles.gap}>
@@ -78,4 +84,5 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.line,
   },
   flex: { flex: 1 },
+  hero: { flexDirection: 'row', alignItems: 'center', gap: space.md },
 });

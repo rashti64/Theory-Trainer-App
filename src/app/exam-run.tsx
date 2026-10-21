@@ -14,7 +14,8 @@ import type { Answer, Locale, Question } from '@/domain/types';
 import { useAppState } from '@/state/app-state';
 import { AppText, Card, RaisedButton } from '@/ui/components';
 import { t, tr } from '@/ui/i18n';
-import { formatNumber, QuestionView } from '@/ui/question-view';
+import { formatNumber } from '@/ui/number-input';
+import { QuestionView } from '@/ui/question-view';
 import { colors, radius, space } from '@/ui/theme';
 
 export default function ExamRunScreen() {

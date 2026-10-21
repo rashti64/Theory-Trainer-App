@@ -1,24 +1,15 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import type { Answer, Locale, Question } from '@/domain/types';
 
-import { AppText, OptionTile, PointsBadge } from './components';
+import { AppText, OptionTile } from './components';
 import { t, tr } from './i18n';
-import { colors, EDGE, fonts, radius, space } from './theme';
-
-const MARKERS = ['A', 'B', 'C', 'D', 'E'];
-
-/** Parse what the learner typed; accepts German decimal commas ("1,6"). */
-export function parseNumberInput(text: string): number | null {
-  const normalised = text.trim().replace(',', '.');
-  if (normalised === '' || !/^-?\d+(\.\d+)?$/.test(normalised)) return null;
-  return Number(normalised);
-}
-
-export function formatNumber(value: number, locale: Locale): string {
-  return locale === 'de' ? String(value).replace('.', ',') : String(value);
-}
+import { Mascot, type Mood } from './mascot';
+import { parseNumberInput } from './number-input';
+import { NumberPad } from './number-pad';
+import { colors, fonts, radius, space } from './theme';
 
 export function QuestionView({
   question,
@@ -28,6 +19,7 @@ export function QuestionView({
   revealed,
   numberText,
   onNumberTextChange,
+  mood = 'curious',
 }: {
   question: Question;
   locale: Locale;
@@ -37,15 +29,31 @@ export function QuestionView({
   revealed: boolean;
   numberText: string;
   onNumberTextChange: (text: string) => void;
+  mood?: Mood;
 }) {
   const selected = answer?.kind === 'multiple-choice' ? answer.selectedOptionIds : [];
+  const critical = question.points === 5;
 
   return (
     <View style={styles.wrap}>
-      <PointsBadge points={question.points} label={t('points', locale)} />
-      <AppText variant="question" accessibilityRole="header">
-        {tr(question.prompt, locale)}
-      </AppText>
+      {/* The mascot asks the question in a speech bubble. */}
+      <View style={styles.askRow}>
+        <View style={styles.mascot}>
+          <Mascot mood={mood} size={76} />
+        </View>
+        <View style={styles.bubble}>
+          <View style={styles.bubbleTail} />
+          <View style={[styles.points, critical && styles.pointsCritical]}>
+            <Ionicons name={critical ? 'warning' : 'ribbon'} size={13} color={critical ? colors.white : colors.slateDark} />
+            <AppText style={[styles.pointsText, critical && { color: colors.white }]}>
+              {question.points} {t('points', locale)}
+            </AppText>
+          </View>
+          <AppText variant="question" accessibilityRole="header">
+            {tr(question.prompt, locale)}
+          </AppText>
+        </View>
+      </View>
 
       {question.media?.type === 'image' ? (
         <Image
@@ -58,7 +66,7 @@ export function QuestionView({
 
       {question.kind === 'multiple-choice' ? (
         <View style={styles.options}>
-          <AppText variant="small" color={colors.muted}>
+          <AppText variant="small" color={colors.slate}>
             {t('chooseAll', locale)}
           </AppText>
           {question.options?.map((option, i) => {
@@ -72,7 +80,7 @@ export function QuestionView({
             return (
               <OptionTile
                 key={option.id}
-                marker={MARKERS[i] ?? String(i + 1)}
+                index={i}
                 label={tr(option.text, locale)}
                 selected={isSelected}
                 state={state}
@@ -91,25 +99,20 @@ export function QuestionView({
         </View>
       ) : (
         <View style={styles.options}>
-          <AppText variant="small" color={colors.muted}>
+          <AppText variant="small" color={colors.slate}>
             {t('enterNumber', locale)}
           </AppText>
-          <View style={styles.numberRow}>
-            <TextInput
-              value={numberText}
-              onChangeText={(text) => {
-                onNumberTextChange(text);
-                onChange({ kind: 'number', value: parseNumberInput(text) });
-              }}
-              editable={!revealed}
-              keyboardType="decimal-pad"
-              inputMode="decimal"
-              accessibilityLabel={t('enterNumber', locale)}
-              style={styles.numberInput}
-              maxLength={8}
-            />
-            <AppText variant="bodyStrong">{tr(question.numberAnswer?.unit, locale)}</AppText>
-          </View>
+          <NumberPad
+            text={numberText}
+            unit={tr(question.numberAnswer?.unit, locale)}
+            disabled={revealed}
+            deleteLabel={t('delete', locale)}
+            state={revealed ? (answer?.kind === 'number' && answer.value === question.numberAnswer?.value ? 'correct' : 'wrong') : undefined}
+            onChange={(text) => {
+              onNumberTextChange(text);
+              onChange({ kind: 'number', value: parseNumberInput(text) });
+            }}
+          />
         </View>
       )}
     </View>
@@ -118,20 +121,42 @@ export function QuestionView({
 
 const styles = StyleSheet.create({
   wrap: { gap: space.lg },
+  askRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
+  mascot: { width: 76, alignItems: 'center' },
+  bubble: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 2.5,
+    borderColor: colors.line,
+    padding: space.md,
+    gap: space.sm,
+    marginBottom: space.lg,
+  },
+  bubbleTail: {
+    position: 'absolute',
+    left: -9,
+    bottom: 22,
+    width: 16,
+    height: 16,
+    backgroundColor: colors.white,
+    borderLeftWidth: 2.5,
+    borderBottomWidth: 2.5,
+    borderColor: colors.line,
+    transform: [{ rotate: '45deg' }],
+  },
+  points: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.slateTint,
+    borderRadius: radius.round,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  pointsCritical: { backgroundColor: colors.red },
+  pointsText: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, color: colors.slateDark },
   options: { gap: space.md },
   media: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md, backgroundColor: colors.slateTint },
-  numberRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  numberInput: {
-    minWidth: 140,
-    borderWidth: 2,
-    borderColor: colors.line,
-    borderBottomWidth: EDGE,
-    borderRadius: radius.md,
-    paddingHorizontal: space.lg,
-    paddingVertical: space.md,
-    fontFamily: fonts.bold,
-    fontSize: 26,
-    color: colors.asphalt,
-    backgroundColor: colors.surface,
-  },
 });

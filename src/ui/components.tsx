@@ -2,7 +2,8 @@
  * Shared building blocks. Raised controls use a darker bottom edge that
  * disappears on press, so taps feel physical without heavy animation.
  */
-import { useState, type ReactNode } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -13,7 +14,16 @@ import {
   type TextProps,
   type ViewStyle,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
+import { SignMarker } from './sign-marker';
 import { colors, EDGE, radius, space, type } from './theme';
 
 type TextVariant = keyof typeof type;
@@ -86,14 +96,14 @@ export function ProgressBar({ value, color = colors.green }: { value: number; co
   );
 }
 
-/** A selectable answer tile. */
+/** A selectable answer tile with a road-sign letter. Pops when chosen, shakes when wrong. */
 export function OptionTile({
   label,
   selected,
   state,
   onPress,
   disabled,
-  marker,
+  index,
 }: {
   label: string;
   selected: boolean;
@@ -101,56 +111,87 @@ export function OptionTile({
   state?: 'correct' | 'wrong' | 'missed';
   onPress: () => void;
   disabled?: boolean;
-  marker: string;
+  index: number;
 }) {
+  const reduced = useReducedMotion();
+  const scale = useSharedValue(1);
+  const shake = useSharedValue(0);
   const [pressed, setPressed] = useState(false);
+
+  useEffect(() => {
+    if (reduced || !selected) return;
+    scale.value = withSequence(withTiming(1.04, { duration: 90 }), withSpring(1, { damping: 8 }));
+  }, [reduced, scale, selected]);
+
+  useEffect(() => {
+    if (reduced || state !== 'wrong') return;
+    shake.value = withSequence(
+      withTiming(-8, { duration: 50 }),
+      withTiming(8, { duration: 70 }),
+      withTiming(-5, { duration: 60 }),
+      withTiming(0, { duration: 50 }),
+    );
+  }, [reduced, shake, state]);
+
+  const anim = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }, { translateX: shake.value }] }));
+
   let fill: string = colors.surface;
   let border: string = colors.line;
-  let edge: string = colors.line;
+  let edge: string = '#C9D0D7';
   if (selected) {
     fill = colors.blueTint;
     border = colors.blue;
-    edge = colors.blue;
+    edge = colors.blueDark;
   }
   if (state === 'correct') {
     fill = colors.greenTint;
     border = colors.green;
-    edge = colors.green;
+    edge = colors.greenDark;
   } else if (state === 'wrong') {
     fill = colors.redTint;
     border = colors.red;
-    edge = colors.red;
+    edge = colors.redDark;
   } else if (state === 'missed') {
+    fill = '#F1FBF3';
     border = colors.green;
     edge = colors.green;
   }
   return (
-    <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: selected, disabled }}
-      onPress={onPress}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
-      disabled={disabled}>
-      <View
-        style={[
-          styles.option,
-          {
-            backgroundColor: fill,
-            borderColor: border,
-            borderBottomColor: edge,
-            borderBottomWidth: pressed ? 2 : EDGE,
-            marginTop: pressed ? EDGE - 2 : 0,
-          },
-        ]}>
-        <View style={[styles.marker, { borderColor: selected ? colors.blue : colors.line }]}>
-          <AppText variant="small" color={selected ? colors.blue : colors.muted}>
-            {marker}
+    <Animated.View style={anim}>
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: selected, disabled }}
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        disabled={disabled}>
+        <View
+          style={[
+            styles.option,
+            {
+              backgroundColor: fill,
+              borderColor: border,
+              borderBottomColor: edge,
+              borderBottomWidth: pressed ? 2 : EDGE + 1,
+              marginTop: pressed ? EDGE - 1 : 0,
+            },
+          ]}>
+          <SignMarker index={index} letter={String.fromCharCode(65 + index)} />
+          <AppText variant="bodyStrong" style={styles.optionText}>
+            {label}
           </AppText>
+          {state === 'correct' || state === 'missed' ? (
+            <Ionicons name="checkmark-circle" size={26} color={colors.green} />
+          ) : state === 'wrong' ? (
+            <Ionicons name="close-circle" size={26} color={colors.red} />
+          ) : (
+            <View style={[styles.check, selected && styles.checkOn]}>
+              {selected ? <Ionicons name="checkmark" size={16} color={colors.white} /> : null}
+            </View>
+          )}
         </View>
-        <AppText style={styles.optionText}>{label}</AppText>
-      </View>
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -193,18 +234,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.md,
     borderWidth: 2,
-    borderRadius: radius.md,
-    paddingVertical: space.lg,
-    paddingHorizontal: space.lg,
+    borderRadius: radius.lg,
+    paddingVertical: space.md,
+    paddingHorizontal: space.md,
+    minHeight: 68,
   },
-  marker: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.sm,
-    borderWidth: 2,
+  check: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2.5,
+    borderColor: colors.line,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  checkOn: { backgroundColor: colors.blue, borderColor: colors.blue },
   optionText: { flex: 1 },
   badge: {
     alignSelf: 'flex-start',

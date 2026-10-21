@@ -1,12 +1,14 @@
 /**
- * Lesson player: one question per screen, "Check", instant feedback, "Continue".
- * Questions answered wrong come back once at the end of the lesson.
- * Only the first attempt counts for spaced repetition and XP.
+ * Lesson player: the mascot asks, the learner answers, "Check" gives instant
+ * feedback with a reaction, confetti and combo counter. Questions answered
+ * wrong come back once at the end. Only the first attempt counts for spaced
+ * repetition and XP.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { SlideInDown, SlideInLeft, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { UNITS } from '@/content/path';
@@ -14,12 +16,17 @@ import { isAnswerCorrect } from '@/domain/exam';
 import { buildLesson, buildMistakesReview } from '@/domain/lesson';
 import { localToday } from '@/domain/srs';
 import { lessonXp } from '@/domain/streak';
-import type { Answer, Question } from '@/domain/types';
+import type { Answer, Locale, Question } from '@/domain/types';
 import { useAppState } from '@/state/app-state';
-import { AppText, ProgressBar, RaisedButton } from '@/ui/components';
-import { t, tr } from '@/ui/i18n';
-import { formatNumber, QuestionView } from '@/ui/question-view';
-import { colors, radius, space } from '@/ui/theme';
+import { AppText, RaisedButton } from '@/ui/components';
+import { Confetti } from '@/ui/confetti';
+import { reaction, t, tr } from '@/ui/i18n';
+import { StepCar } from '@/ui/city/sprites';
+import { Mascot } from '@/ui/mascot';
+import { formatNumber } from '@/ui/number-input';
+import { QuestionView } from '@/ui/question-view';
+import { RoadProgress } from '@/ui/road-progress';
+import { colors, fonts, radius, space } from '@/ui/theme';
 
 export default function LessonScreen() {
   const { unitId } = useLocalSearchParams<{ unitId: string }>();
@@ -38,7 +45,11 @@ export default function LessonScreen() {
   const [numberText, setNumberText] = useState('');
   const [revealed, setRevealed] = useState(false);
   const [firstTryCorrect, setFirstTryCorrect] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [bestCombo, setBestCombo] = useState(0);
+  const [confetti, setConfetti] = useState(0);
   const [finishedXp, setFinishedXp] = useState<number | null>(null);
+  const [goalBefore] = useState(() => state.activity[localToday()]?.xp ?? 0);
 
   const question = queue[index];
   const isRetry = index >= firstRoundSize;
@@ -49,6 +60,14 @@ export default function LessonScreen() {
   function check() {
     if (!question) return;
     setRevealed(true);
+    if (correct) {
+      const next = combo + 1;
+      setCombo(next);
+      setBestCombo((b) => Math.max(b, next));
+      setConfetti((n) => n + 1);
+    } else {
+      setCombo(0);
+    }
     if (!isRetry) {
       dispatch({ type: 'answered', question, correct });
       if (correct) setFirstTryCorrect((n) => n + 1);
@@ -81,10 +100,14 @@ export default function LessonScreen() {
       <LessonComplete
         xp={finishedXp ?? 0}
         accuracy={firstRoundSize ? firstTryCorrect / firstRoundSize : 0}
+        bestCombo={bestCombo}
+        goalReached={goalBefore < state.dailyGoalXp && goalBefore + (finishedXp ?? 0) >= state.dailyGoalXp}
         locale={locale}
       />
     );
   }
+
+  const mood = !revealed ? 'curious' : correct ? 'happy' : 'oops';
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -92,7 +115,13 @@ export default function LessonScreen() {
         <Pressable onPress={quit} accessibilityRole="button" accessibilityLabel={t('close', locale)} hitSlop={12}>
           <Ionicons name="close" size={30} color={colors.muted} />
         </Pressable>
-        <ProgressBar value={Math.min(index, firstRoundSize) / firstRoundSize} />
+        <RoadProgress value={Math.min(index + (revealed ? 1 : 0), firstRoundSize) / firstRoundSize} />
+        {combo >= 2 ? (
+          <Animated.View entering={ZoomIn.springify()} style={styles.comboChip}>
+            <Ionicons name="flame" size={16} color="#F2541B" />
+            <AppText style={styles.comboChipText}>{combo}</AppText>
+          </Animated.View>
+        ) : null}
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
@@ -105,20 +134,26 @@ export default function LessonScreen() {
           revealed={revealed}
           numberText={numberText}
           onNumberTextChange={setNumberText}
+          mood={mood}
         />
       </ScrollView>
 
       {revealed ? (
-        <View style={[styles.feedback, { backgroundColor: correct ? colors.greenTint : colors.redTint }]}>
+        <Animated.View
+          entering={SlideInDown.springify().damping(16)}
+          style={[styles.feedback, { backgroundColor: correct ? colors.greenTint : colors.redTint }]}>
           <View style={styles.feedbackHead}>
-            <Ionicons
-              name={correct ? 'checkmark-circle' : 'close-circle'}
-              size={28}
-              color={correct ? colors.green : colors.red}
-            />
-            <AppText variant="title" color={correct ? colors.greenDark : colors.redDark}>
-              {t(correct ? 'correct' : 'wrong', locale)}
+            <View style={[styles.feedbackIcon, { backgroundColor: correct ? colors.green : colors.red }]}>
+              <Ionicons name={correct ? 'checkmark' : 'close'} size={24} color={colors.white} />
+            </View>
+            <AppText style={[styles.feedbackTitle, { color: correct ? colors.greenDark : colors.redDark }]}>
+              {reaction(correct ? 'correct' : 'wrong', locale, index + firstTryCorrect)}
             </AppText>
+            {correct && combo >= 3 ? (
+              <View style={styles.comboBadge}>
+                <AppText style={styles.comboBadgeText}>{t('combo', locale, { n: combo })}</AppText>
+              </View>
+            ) : null}
           </View>
           {!correct && question.kind === 'number' && question.numberAnswer ? (
             <AppText variant="bodyStrong" color={colors.redDark}>
@@ -130,77 +165,152 @@ export default function LessonScreen() {
             <AppText color={correct ? colors.greenDark : colors.redDark}>{tr(question.explanation, locale)}</AppText>
           ) : null}
           <RaisedButton label={t('continue', locale)} tone={correct ? 'success' : 'danger'} onPress={next} />
-        </View>
+        </Animated.View>
       ) : (
         <View style={styles.footer}>
           <RaisedButton label={t('check', locale)} disabled={!hasAnswer} onPress={check} />
         </View>
       )}
+
+      <Confetti burst={confetti} />
     </SafeAreaView>
   );
 }
 
-function LessonComplete({ xp, accuracy, locale }: { xp: number; accuracy: number; locale: 'de' | 'en' }) {
+function LessonComplete({
+  xp,
+  accuracy,
+  bestCombo,
+  goalReached,
+  locale,
+}: {
+  xp: number;
+  accuracy: number;
+  bestCombo: number;
+  goalReached: boolean;
+  locale: Locale;
+}) {
+  // Count the XP up, like a slot machine.
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    if (shown >= xp) return;
+    const id = setTimeout(() => setShown((n) => Math.min(xp, n + 1)), 45);
+    return () => clearTimeout(id);
+  }, [shown, xp]);
+
   return (
     <SafeAreaView style={[styles.screen, styles.complete]}>
-      <View style={styles.trophy}>
-        <Ionicons name="flag" size={64} color={colors.asphalt} />
+      <Mascot mood="happy" size={120} />
+      {/* The car rolls over the finish line. */}
+      <View style={styles.finishRoad}>
+        <View style={styles.finishLine}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <View key={i} style={[styles.finishCell, { backgroundColor: (i + Math.floor(i / 2)) % 2 ? '#1F2A33' : '#FFFFFF' }]} />
+          ))}
+        </View>
+        <Animated.View entering={SlideInLeft.duration(1100)} style={styles.finishCar}>
+          <StepCar body={colors.red} size={64} />
+        </Animated.View>
       </View>
-      <AppText variant="display" style={styles.center}>
-        {t('lessonDone', locale)}
-      </AppText>
+      <Animated.View entering={ZoomIn.springify().delay(150)}>
+        <AppText style={styles.completeTitle}>{t('lessonDone', locale)}</AppText>
+      </Animated.View>
+      {goalReached ? (
+        <Animated.View entering={ZoomIn.springify().delay(500)} style={styles.goalBadge}>
+          <Ionicons name="speedometer" size={18} color={colors.white} />
+          <AppText style={styles.goalBadgeText}>{t('goalReached', locale)}</AppText>
+        </Animated.View>
+      ) : null}
       <View style={styles.results}>
-        <View style={[styles.result, { borderColor: colors.yellow }]}>
-          <AppText variant="small" color={colors.yellowDark}>
-            {t('xpEarned', locale)}
-          </AppText>
-          <AppText variant="display">{xp}</AppText>
-        </View>
-        <View style={[styles.result, { borderColor: colors.green }]}>
-          <AppText variant="small" color={colors.greenDark}>
-            {t('accuracy', locale)}
-          </AppText>
-          <AppText variant="display">{Math.round(accuracy * 100)}%</AppText>
-        </View>
+        <ResultTile label={t('xpEarned', locale)} value={String(shown)} icon="flash" color={colors.yellow} ink={colors.yellowDark} />
+        <ResultTile label={t('accuracy', locale)} value={`${Math.round(accuracy * 100)}%`} icon="locate" color={colors.green} ink={colors.greenDark} />
+        <ResultTile label={t('bestCombo', locale)} value={String(bestCombo)} icon="flame" color="#F2541B" ink="#B83A10" />
       </View>
       <RaisedButton label={t('continue', locale)} onPress={() => router.back()} style={styles.completeButton} />
+      <Confetti burst={1} />
     </SafeAreaView>
+  );
+}
+
+function ResultTile({
+  label,
+  value,
+  icon,
+  color,
+  ink,
+}: {
+  label: string;
+  value: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  ink: string;
+}) {
+  return (
+    <View style={[styles.result, { borderColor: color }]}>
+      <View style={[styles.resultHead, { backgroundColor: color }]}>
+        <Ionicons name={icon} size={14} color={colors.white} />
+        <AppText style={styles.resultLabel} numberOfLines={1}>
+          {label}
+        </AppText>
+      </View>
+      <AppText style={[styles.resultValue, { color: ink }]}>{value}</AppText>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
+  screen: { flex: 1, backgroundColor: '#F2F7FB' },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingHorizontal: space.lg, paddingTop: space.md },
+  comboChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: '#FFE3D6',
+    borderRadius: radius.round,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  comboChipText: { fontFamily: fonts.black, fontSize: 15, lineHeight: 18, color: '#B83A10' },
   body: { padding: space.lg, paddingBottom: space.xxl },
-  footer: { padding: space.lg, borderTopWidth: 2, borderTopColor: colors.line },
+  footer: { padding: space.lg, borderTopWidth: 2, borderTopColor: colors.line, backgroundColor: colors.white },
   feedback: {
     padding: space.lg,
     gap: space.sm,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
   },
-  feedbackHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  complete: { alignItems: 'center', justifyContent: 'center', padding: space.xl, gap: space.xl },
-  trophy: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.yellow,
-    borderWidth: 6,
-    borderColor: colors.white,
+  feedbackHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, flexWrap: 'wrap' },
+  feedbackIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
+  feedbackTitle: { fontFamily: fonts.black, fontSize: 24, lineHeight: 30 },
+  comboBadge: { backgroundColor: '#F2541B', borderRadius: radius.round, paddingHorizontal: 10, paddingVertical: 3 },
+  comboBadgeText: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, color: colors.white },
+  complete: { alignItems: 'center', justifyContent: 'center', padding: space.xl, gap: space.lg },
+  completeTitle: { fontFamily: fonts.black, fontSize: 32, lineHeight: 38, color: colors.asphalt, textAlign: 'center' },
+  goalBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: colors.blue,
+    borderRadius: radius.round,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
-  center: { textAlign: 'center' },
-  results: { flexDirection: 'row', gap: space.md },
-  result: {
-    borderWidth: 2,
-    borderRadius: radius.md,
-    paddingVertical: space.md,
-    paddingHorizontal: space.lg,
-    alignItems: 'center',
-    minWidth: 140,
-    backgroundColor: colors.surface,
-  },
+  goalBadgeText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, color: colors.white },
+  results: { flexDirection: 'row', gap: space.sm, alignSelf: 'stretch' },
+  result: { flex: 1, borderWidth: 2.5, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.white, alignItems: 'center' },
+  resultHead: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 4 },
+  resultLabel: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 15, color: colors.white },
+  resultValue: { fontFamily: fonts.black, fontSize: 30, lineHeight: 40 },
   completeButton: { alignSelf: 'stretch' },
+  finishRoad: {
+    alignSelf: 'stretch',
+    height: 56,
+    backgroundColor: '#5B6570',
+    borderRadius: radius.md,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  finishLine: { position: 'absolute', right: 40, top: 0, bottom: 0, width: 16, flexDirection: 'row', flexWrap: 'wrap' },
+  finishCell: { width: 8, height: 9.33 },
+  finishCar: { position: 'absolute', right: 64, bottom: 6 },
 });
