@@ -4,7 +4,7 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Rect } from 'react-native-svg';
 
-import { TopCar } from './city/sprites';
+import { TopCar } from './sprites';
 import { colors } from './theme';
 
 const CAR_W = 36;

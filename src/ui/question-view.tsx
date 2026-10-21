@@ -6,7 +6,8 @@ import type { Answer, Locale, Question } from '@/domain/types';
 
 import { AppText, OptionTile } from './components';
 import { t, tr } from './i18n';
-import { Mascot, type Mood } from './mascot';
+import type { Mood3D as Mood } from './city3d/mascot3d';
+import { Mascot3DView } from './mascot-3d-view';
 import { parseNumberInput } from './number-input';
 import { NumberPad } from './number-pad';
 import { colors, fonts, radius, space } from './theme';
@@ -39,7 +40,7 @@ export function QuestionView({
       {/* The mascot asks the question in a speech bubble. */}
       <View style={styles.askRow}>
         <View style={styles.mascot}>
-          <Mascot mood={mood} size={76} />
+          <Mascot3DView mood={mood} size={86} />
         </View>
         <View style={styles.bubble}>
           <View style={styles.bubbleTail} />
@@ -122,7 +123,7 @@ export function QuestionView({
 const styles = StyleSheet.create({
   wrap: { gap: space.lg },
   askRow: { flexDirection: 'row', alignItems: 'flex-end', gap: space.sm },
-  mascot: { width: 76, alignItems: 'center' },
+  mascot: { width: 86, alignItems: 'center' },
   bubble: {
     flex: 1,
     backgroundColor: colors.white,

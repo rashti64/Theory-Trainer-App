@@ -26,6 +26,7 @@ describe('sync', () => {
   const base: Omit<PersistedState, 'updatedAt'> = {
     locale: 'de',
     dailyGoalXp: 20,
+    soundOn: true,
     progress: {},
     activity: {},
     exams: [],

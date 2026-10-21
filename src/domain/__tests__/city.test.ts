@@ -1,42 +1,50 @@
 import { LESSONS_PER_UNIT } from '@/content/path-progress';
-import { streetFront } from '@/ui/city/buildings';
-import { connectors, districtStops, streetY, UNIT_H } from '@/ui/city/geometry';
+import { moodForHour } from '@/ui/city3d/time-of-day';
+import { CONNECTOR_X, cityBlocks, HALF_W, roads, rowZ, ROAD_W, stops } from '@/ui/city3d/world';
 import { applyKey, parseNumberInput } from '@/ui/number-input';
 
-describe('city map geometry', () => {
-  const width = 390;
-
-  it('has one stop per lesson, in route order', () => {
-    const stops = districtStops(width);
-    expect(stops).toHaveLength(LESSONS_PER_UNIT);
-    // Street 1 runs left to right, street 2 right to left.
-    expect(stops[0].x).toBeLessThan(stops[1].x);
-    expect(stops[2].x).toBeGreaterThan(stops[3].x);
-    expect(stops.map((s) => s.index)).toEqual([0, 1, 2, 3]);
+describe('3D city layout', () => {
+  it('has one stop per lesson, along the route', () => {
+    const s = stops(0);
+    expect(s).toHaveLength(LESSONS_PER_UNIT);
+    // Street 1 runs west→east, street 2 east→west, further away.
+    expect(s[0].x).toBeLessThan(s[1].x);
+    expect(s[2].x).toBeGreaterThan(s[3].x);
+    expect(s[2].z).toBeLessThan(s[1].z);
   });
 
-  it('keeps every stop inside the district', () => {
-    for (const s of districtStops(width)) {
-      expect(s.x).toBeGreaterThan(40);
-      expect(s.x).toBeLessThan(width - 40);
-      expect(s.y).toBeLessThan(UNIT_H);
+  it('places each district further along than the last', () => {
+    expect(rowZ(1, 0)).toBeLessThan(rowZ(0, 1));
+  });
+
+  it('links the last street of a district to the next district', () => {
+    expect(roads(0, 3).connectors).toHaveLength(2);
+    expect(roads(2, 3).connectors).toHaveLength(1);
+  });
+
+  it('keeps buildings off the roads and inside the city', () => {
+    for (let u = 0; u < 7; u++) {
+      for (const b of cityBlocks(u, 7).buildings) {
+        expect(b.x - b.width / 2).toBeGreaterThanOrEqual(-HALF_W - 0.01);
+        expect(b.x + b.width / 2).toBeLessThanOrEqual(HALF_W + 0.01);
+        const onConnector = (cx: number) => b.x + b.width / 2 > cx - ROAD_W / 2 && b.x - b.width / 2 < cx + ROAD_W / 2;
+        const block = b.front > rowZ(u, 1) ? 0 : 1;
+        if (block === 0) expect(onConnector(CONNECTOR_X)).toBe(false);
+        if (block === 1 && u < 6) expect(onConnector(-CONNECTOR_X)).toBe(false);
+      }
     }
   });
 
-  it('connects districts on the left and streets on the right', () => {
-    const middle = connectors(width, { first: false, last: false });
-    expect(middle).toHaveLength(3);
-    expect(middle[1].x).toBeGreaterThan(width / 2);
-    expect(middle[1].y).toBe(streetY(0));
-    expect(connectors(width, { first: true, last: true })).toHaveLength(1);
+  it('builds the same district every time', () => {
+    expect(cityBlocks(3, 7)).toEqual(cityBlocks(3, 7));
   });
 
-  it('builds the same street every time and stays in its lot', () => {
-    expect(streetFront(5, 12, 378)).toEqual(streetFront(5, 12, 378));
-    for (const b of streetFront(9, 80, 378)) {
-      expect(b.x).toBeGreaterThanOrEqual(80);
-      expect(b.x + b.width).toBeLessThanOrEqual(378);
-    }
+  it('follows the clock: morning, day, golden hour, night', () => {
+    expect(moodForHour(8)).toBe('morning');
+    expect(moodForHour(13)).toBe('day');
+    expect(moodForHour(18)).toBe('golden');
+    expect(moodForHour(23)).toBe('night');
+    expect(moodForHour(3)).toBe('night');
   });
 });
 

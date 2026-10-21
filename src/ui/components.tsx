@@ -37,13 +37,14 @@ export function AppText({
   return <Text {...rest} style={[type[variant], { color }, style]} />;
 }
 
-type ButtonTone = 'primary' | 'success' | 'danger' | 'neutral' | 'reward';
+type ButtonTone = 'primary' | 'success' | 'danger' | 'neutral' | 'reward' | 'light';
 
 const tones: Record<ButtonTone, { fill: string; edge: string; ink: string; border?: string }> = {
   primary: { fill: colors.blue, edge: colors.blueDark, ink: colors.white },
   success: { fill: colors.green, edge: colors.greenDark, ink: colors.white },
   danger: { fill: colors.red, edge: colors.redDark, ink: colors.white },
   reward: { fill: colors.yellow, edge: colors.yellowDark, ink: colors.asphalt },
+  light: { fill: colors.white, edge: '#C9D3DE', ink: colors.blue },
   neutral: { fill: colors.surface, edge: colors.line, ink: colors.asphalt, border: colors.line },
 };
 

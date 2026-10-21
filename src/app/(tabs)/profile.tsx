@@ -58,6 +58,17 @@ export default function ProfileScreen() {
           />
         </Section>
 
+        <Section title={t('sound', locale)}>
+          <Segmented
+            options={[
+              { id: 'on', label: t('on', locale) },
+              { id: 'off', label: t('off', locale) },
+            ]}
+            value={state.soundOn ? 'on' : 'off'}
+            onChange={(id) => dispatch({ type: 'set-sound', on: id === 'on' })}
+          />
+        </Section>
+
         <Section title={t('account', locale)}>
           {!backendReady ? (
             <AppText color={colors.slate}>{t('backendMissing', locale)}</AppText>

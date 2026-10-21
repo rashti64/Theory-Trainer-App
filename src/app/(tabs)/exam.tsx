@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { mastery } from '@/domain/srs';
 import { useAppState } from '@/state/app-state';
 import { AppText, Card, ProgressBar, RaisedButton } from '@/ui/components';
-import { Mascot } from '@/ui/mascot';
+import { Mascot3DView } from '@/ui/mascot-3d-view';
 import { t } from '@/ui/i18n';
 import { colors, space } from '@/ui/theme';
 
@@ -22,7 +22,7 @@ export default function ExamTab() {
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <Mascot mood={readiness >= 0.8 ? 'happy' : 'curious'} size={84} />
+          <Mascot3DView mood={readiness >= 0.8 ? 'happy' : 'curious'} size={92} />
           <View style={styles.flex}>
             <AppText variant="display">{t('examTitle', locale)}</AppText>
           </View>

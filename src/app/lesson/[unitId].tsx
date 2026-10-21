@@ -21,8 +21,9 @@ import { useAppState } from '@/state/app-state';
 import { AppText, RaisedButton } from '@/ui/components';
 import { Confetti } from '@/ui/confetti';
 import { reaction, t, tr } from '@/ui/i18n';
-import { StepCar } from '@/ui/city/sprites';
-import { Mascot } from '@/ui/mascot';
+import { StepCar } from '@/ui/sprites';
+import { useFeedback } from '@/ui/feedback';
+import { Mascot3DView } from '@/ui/mascot-3d-view';
 import { formatNumber } from '@/ui/number-input';
 import { QuestionView } from '@/ui/question-view';
 import { RoadProgress } from '@/ui/road-progress';
@@ -31,6 +32,7 @@ import { colors, fonts, radius, space } from '@/ui/theme';
 export default function LessonScreen() {
   const { unitId } = useLocalSearchParams<{ unitId: string }>();
   const { state, catalog, dispatch } = useAppState();
+  const feedback = useFeedback();
   const locale = state.locale;
   const unit = UNITS.find((u) => u.id === unitId);
 
@@ -60,6 +62,8 @@ export default function LessonScreen() {
   function check() {
     if (!question) return;
     setRevealed(true);
+    if (correct) feedback.correct();
+    else feedback.wrong();
     if (correct) {
       const next = combo + 1;
       setCombo(next);
@@ -85,6 +89,7 @@ export default function LessonScreen() {
     }
     const xp = lessonXp(firstTryCorrect, firstRoundSize);
     dispatch({ type: 'lesson-finished', xp, unitId: unit ? unit.id : null });
+    feedback.complete();
     setFinishedXp(xp);
   }
 
@@ -130,7 +135,10 @@ export default function LessonScreen() {
           question={question}
           locale={locale}
           answer={answer}
-          onChange={setAnswer}
+          onChange={(a) => {
+            feedback.tap();
+            setAnswer(a);
+          }}
           revealed={revealed}
           numberText={numberText}
           onNumberTextChange={setNumberText}
@@ -200,7 +208,7 @@ function LessonComplete({
 
   return (
     <SafeAreaView style={[styles.screen, styles.complete]}>
-      <Mascot mood="happy" size={120} />
+      <Mascot3DView mood="happy" size={150} />
       {/* The car rolls over the finish line. */}
       <View style={styles.finishRoad}>
         <View style={styles.finishLine}>

@@ -25,6 +25,8 @@ export type ExamRecord = {
 export type PersistedState = {
   locale: Locale;
   dailyGoalXp: DailyGoalXp;
+  /** Sound effects in lessons. */
+  soundOn: boolean;
   progress: ProgressMap;
   activity: DailyActivity;
   exams: ExamRecord[];
@@ -37,6 +39,7 @@ export type PersistedState = {
 const initialState: PersistedState = {
   locale: 'de',
   dailyGoalXp: 20,
+  soundOn: true,
   progress: {},
   activity: {},
   exams: [],
@@ -50,6 +53,7 @@ type Action =
   | { type: 'exam-finished'; result: ExamResult; xp: number }
   | { type: 'set-locale'; locale: Locale }
   | { type: 'set-daily-goal'; xp: DailyGoalXp }
+  | { type: 'set-sound'; on: boolean }
   | { type: 'replace'; state: PersistedState };
 
 function reducer(state: PersistedState, action: Action): PersistedState {
@@ -98,6 +102,8 @@ function reducer(state: PersistedState, action: Action): PersistedState {
       return { ...state, ...stamp, locale: action.locale };
     case 'set-daily-goal':
       return { ...state, ...stamp, dailyGoalXp: action.xp };
+    case 'set-sound':
+      return { ...state, ...stamp, soundOn: action.on };
     case 'replace':
       return action.state;
   }

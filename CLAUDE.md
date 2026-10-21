@@ -16,9 +16,11 @@ The product owner is the repository owner. They approve every pull request and e
    videos and translations belong to TÜV | DEKRA arge tp 21. Until the licence is signed we use
    `src/content/placeholder-catalog.ts`, written by us. Never copy questions or media from other
    apps, websites or PDFs.
-2. **Our own brand.** The app may feel playful like the best language-learning apps, but it never
-   copies another product's name, mascot, colours, sounds or screens. The look comes from German
-   road signage (see `src/ui/theme.ts`).
+2. **Our own brand.** We follow Duolingo's design *principles* (vibrant colour, chunky rounded
+   shapes, one clear path, characters that react, tactile buttons, sound and haptics) but never copy
+   its name, mascot, colours, fonts, sounds or screens. Our palette comes from German road signage
+   (`src/ui/theme.ts`); the type is Nunito; the mascot is our traffic light. The design direction is
+   written up in the team brief (section "Design direction v2").
 3. **Exam rules are pinned by tests.** `src/domain/exam.ts` implements FeV Anlage 7: 30 questions
    (20 basic + 10 class), at most 10 error points, two wrong 5-point questions fail. Change these
    only with a cited source and an updated test.
@@ -36,7 +38,10 @@ src/
   content/    Learning path (units, topics) and the placeholder catalog.
   state/      App state (React context + reducer), persisted on device; session + sync.
   lib/        Supabase client and sync.
-  ui/         Design tokens, i18n strings, shared components.
+  ui/         Design tokens, i18n strings, shared components, sound/haptic feedback.
+  ui/city3d/  The 3D learning map (three.js via react-three-fiber + expo-gl): world layout
+              (pure, tested), models, scene, camera rig, time-of-day lighting. Text and buttons
+              are a native layer pinned to 3D positions, never drawn inside WebGL.
 supabase/     SQL migrations (schema + RLS).
 docs/         Product and data documentation.
 .claude/agents/  The team: one brief per role.
@@ -55,6 +60,15 @@ npm test                # jest (domain tests)
 ```
 
 Use `npx expo install <pkg>` for every dependency so versions match the Expo SDK.
+
+## 3D rules
+
+- Import react-three-fiber only through `src/ui/city3d/r3f(.native).ts` (web vs. expo-gl entry).
+- Keep models low-poly and rounded (`shapes.ts`); share geometry, instance anything repeated.
+- Anything mutable and imperative (camera, gestures) lives outside React (see `camera-rig.ts`);
+  React reads snapshots via `useSyncExternalStore`. The React Compiler is on.
+- Every animation must stop when "reduce motion" is on.
+- Check performance on a real mid-range Android phone before shipping 3D changes.
 
 ## Definition of done
 

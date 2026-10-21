@@ -1,121 +1,80 @@
 /**
- * The learning path as a living city: each unit is a district behind a
- * town-entry sign, lessons are cars waiting along the route, and the city
- * moves around them — traffic, people, traffic lights, clouds.
+ * The learning path as a living 3D city. Each unit is a district behind a
+ * town-entry sign; lessons are cars on floating pads along the route; the
+ * mascot waits at the next lesson; the light follows the real time of day.
  */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { UNITS } from '@/content/path';
 import { pathStatus } from '@/content/path-progress';
 import { useAppState } from '@/state/app-state';
-import { District } from '@/ui/city/district';
-import { AppText } from '@/ui/components';
+import { CityMap } from '@/ui/city3d/city-map';
 import { t } from '@/ui/i18n';
 import { StatsBar } from '@/ui/stats-bar';
-import { colors, fonts, radius, space } from '@/ui/theme';
-
-const MAX_MAP_WIDTH = 520;
+import { colors, space } from '@/ui/theme';
 
 export default function LearnScreen() {
-  const { state, catalog } = useAppState();
-  const { width: screenWidth } = useWindowDimensions();
-  const width = Math.min(screenWidth, MAX_MAP_WIDTH);
+  const { state } = useAppState();
   const statuses = pathStatus(UNITS, state.unitLessons);
-  const hasMistakes = Object.values(state.progress).some((p) => (p?.timesWrong ?? 0) > 0 && (p?.box ?? 0) < 3);
+  const mistakes = Object.values(state.progress).filter((p) => (p?.timesWrong ?? 0) > 0 && (p?.box ?? 0) < 3).length;
   const locale = state.locale;
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <StatsBar />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={{ width }}>
-          {statuses.map((status, i) => (
-            <District
-              key={status.unit.id}
-              index={i}
-              status={status}
-              width={width}
-              first={i === 0}
-              last={i === statuses.length - 1}
-              locale={locale}
-              onOpenLesson={() => router.push(`/lesson/${status.unit.id}`)}
-            />
-          ))}
-
-          {/* The repair shop: where mistakes get fixed. */}
-          <View style={styles.garageArea}>
-            <Pressable
-              onPress={() => router.push('/lesson/review')}
-              disabled={!hasMistakes}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !hasMistakes }}>
-              {({ pressed }) => (
-                <View style={[styles.garage, pressed && styles.garagePressed, !hasMistakes && styles.garageIdle]}>
-                  <View style={styles.garageRoof}>
-                    <AppText style={styles.garageName}>{t('mistakes', locale)}</AppText>
-                  </View>
-                  <View style={styles.garageBody}>
-                    <View style={styles.garageDoor}>
-                      {[0, 1, 2, 3].map((i) => (
-                        <View key={i} style={styles.doorSlat} />
-                      ))}
-                    </View>
-                    <Ionicons name="construct" size={34} color={hasMistakes ? colors.blue : colors.muted} />
-                  </View>
-                </View>
-              )}
-            </Pressable>
-            {!hasMistakes ? (
-              <AppText variant="small" color={colors.slateDark} style={styles.garageHint}>
-                {t('mistakesNone', locale)}
-              </AppText>
-            ) : null}
-          </View>
-
-          {catalog.isPlaceholder ? (
-            <AppText variant="small" color={colors.slateDark} style={styles.notice}>
-              {t('placeholderNotice', locale)}
-            </AppText>
+      <View style={styles.map}>
+        <CityMap statuses={statuses} locale={locale} onOpenLesson={(id) => router.push(`/lesson/${id}`)} />
+        {/* The repair shop: where mistakes get fixed. */}
+        <Pressable
+          onPress={() => router.push('/lesson/review')}
+          disabled={mistakes === 0}
+          accessibilityRole="button"
+          accessibilityLabel={t('mistakes', locale)}
+          accessibilityHint={mistakes === 0 ? t('mistakesNone', locale) : undefined}
+          style={[styles.garage, mistakes === 0 && styles.garageIdle]}>
+          <Ionicons name="construct" size={24} color={colors.white} />
+          {mistakes > 0 ? (
+            <View style={styles.count}>
+              <Ionicons name="alert" size={12} color={colors.white} />
+            </View>
           ) : null}
-        </View>
-      </ScrollView>
+        </Pressable>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#CBE9AE' },
-  content: { alignItems: 'center', paddingBottom: space.xxl },
-  garageArea: { paddingHorizontal: space.lg, paddingTop: space.lg, gap: space.sm, alignItems: 'center' },
-  garage: { width: 260, alignItems: 'center' },
-  garagePressed: { transform: [{ translateY: 3 }] },
-  garageIdle: { opacity: 0.7 },
-  garageRoof: {
+  screen: { flex: 1, backgroundColor: colors.white },
+  map: { flex: 1 },
+  garage: {
+    position: 'absolute',
+    left: space.lg,
+    bottom: space.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.red,
-    alignSelf: 'stretch',
-    borderTopLeftRadius: radius.md,
-    borderTopRightRadius: radius.md,
-    paddingVertical: space.sm,
-    alignItems: 'center',
-    borderBottomWidth: 4,
+    borderBottomWidth: 5,
     borderBottomColor: colors.redDark,
-  },
-  garageName: { fontFamily: fonts.black, fontSize: 18, lineHeight: 22, color: colors.white },
-  garageBody: {
-    alignSelf: 'stretch',
-    backgroundColor: '#F3E6CF',
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
-    padding: space.md,
-    borderBottomLeftRadius: radius.sm,
-    borderBottomRightRadius: radius.sm,
+    justifyContent: 'center',
   },
-  garageDoor: { width: 120, height: 64, backgroundColor: '#C7CED5', borderRadius: 4, padding: 6, gap: 6 },
-  doorSlat: { flex: 1, backgroundColor: '#AEB7C0', borderRadius: 2 },
-  garageHint: { textAlign: 'center', maxWidth: 300 },
-  notice: { textAlign: 'center', paddingHorizontal: space.xl, marginTop: space.lg },
+  garageIdle: { backgroundColor: '#AEB7C0', borderBottomColor: '#8F99A3' },
+  count: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.orange,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
