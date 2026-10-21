@@ -42,6 +42,7 @@ export default function RootLayout() {
             <Stack.Screen name="lesson/[unitId]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
             <Stack.Screen name="exam-run" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
             <Stack.Screen name="auth" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
           </Stack>
         </SessionProvider>
       </AppStateProvider>

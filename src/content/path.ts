@@ -18,64 +18,48 @@ export type Unit = {
 };
 
 export const TOPICS: Topic[] = [
-  { id: 'behaviour', title: { de: 'Verhalten im Verkehr', en: 'Behaviour in traffic' } },
-  { id: 'right-of-way', title: { de: 'Vorfahrt', en: 'Right of way' } },
-  { id: 'signs', title: { de: 'Verkehrszeichen', en: 'Traffic signs' } },
-  { id: 'hazards', title: { de: 'Gefahrenlehre', en: 'Hazard awareness' } },
-  { id: 'rules', title: { de: 'Vorschriften', en: 'Rules and duties' } },
-  { id: 'environment', title: { de: 'Umweltschutz', en: 'Environment' } },
-  { id: 'technology', title: { de: 'Technik', en: 'Vehicle technology' } },
+  { id: 'speed', title: { de: 'Geschwindigkeit & Abstand', en: 'Speed & distance' } },
+  { id: 'right-of-way', title: { de: 'Vorfahrt & Vorrang', en: 'Right of way' } },
+  { id: 'signs', title: { de: 'Verkehrszeichen & Ampeln', en: 'Signs & traffic lights' } },
+  { id: 'people', title: { de: 'Fußgänger, Kinder & Radfahrer', en: 'Pedestrians, children & cyclists' } },
+  { id: 'overtaking', title: { de: 'Überholen & Fahrstreifen', en: 'Overtaking & lanes' } },
+  { id: 'parking', title: { de: 'Halten & Parken', en: 'Stopping & parking' } },
+  { id: 'motorway', title: { de: 'Autobahn', en: 'Motorway' } },
+  { id: 'conditions', title: { de: 'Wetter, Nacht & Licht', en: 'Weather, night & lights' } },
+  { id: 'fitness', title: { de: 'Fit am Steuer', en: 'Fit to drive' } },
+  { id: 'emergency', title: { de: 'Bahnübergang & Notfall', en: 'Level crossings & emergencies' } },
+  { id: 'environment', title: { de: 'Umwelt', en: 'Environment' } },
+  { id: 'technology', title: { de: 'Technik & Wartung', en: 'Technology & maintenance' } },
   { id: 'physics', title: { de: 'Fahrphysik', en: 'Driving physics' } },
+  { id: 'load', title: { de: 'Ladung & Mitfahrer', en: 'Load & passengers' } },
+  { id: 'licence', title: { de: 'Führerschein & Probezeit', en: 'Licence & probation' } },
 ];
 
-export const UNITS: Unit[] = [
-  {
-    id: 'u1',
-    title: { de: 'Erste Schritte', en: 'First steps' },
-    subtitle: { de: 'Tempo und Verhalten', en: 'Speed and behaviour' },
-    topicIds: ['behaviour'],
-    color: 'blue',
-  },
-  {
-    id: 'u2',
-    title: { de: 'Wer fährt zuerst?', en: 'Who goes first?' },
-    subtitle: { de: 'Vorfahrt', en: 'Right of way' },
-    topicIds: ['right-of-way'],
-    color: 'yellow',
-  },
-  {
-    id: 'u3',
-    title: { de: 'Schilder lesen', en: 'Reading signs' },
-    subtitle: { de: 'Verkehrszeichen', en: 'Traffic signs' },
-    topicIds: ['signs'],
-    color: 'green',
-  },
-  {
-    id: 'u4',
-    title: { de: 'Gefahren erkennen', en: 'Spotting hazards' },
-    subtitle: { de: 'Gefahrenlehre', en: 'Hazard awareness' },
-    topicIds: ['hazards'],
-    color: 'slate',
-  },
-  {
-    id: 'u5',
-    title: { de: 'Regeln und Pflichten', en: 'Rules and duties' },
-    subtitle: { de: 'Alkohol, Handy, Gurt', en: 'Alcohol, phone, seat belt' },
-    topicIds: ['rules', 'environment'],
-    color: 'blue',
-  },
-  {
-    id: 'u6',
-    title: { de: 'Dein Auto', en: 'Your car' },
-    subtitle: { de: 'Technik', en: 'Vehicle technology' },
-    topicIds: ['technology'],
-    color: 'yellow',
-  },
-  {
-    id: 'u7',
-    title: { de: 'Anhalteweg', en: 'Stopping distance' },
-    subtitle: { de: 'Fahrphysik', en: 'Driving physics' },
-    topicIds: ['physics'],
-    color: 'green',
-  },
-];
+const COLORS: Unit['color'][] = ['blue', 'yellow', 'green', 'slate'];
+
+const SUBTITLES: Record<string, LocalizedText> = {
+  speed: { de: 'Tempo, Abstand, Sicht', en: 'Speed, gaps, visibility' },
+  'right-of-way': { de: 'Wer fährt zuerst?', en: 'Who goes first?' },
+  signs: { de: 'Schilder lesen', en: 'Reading signs' },
+  people: { de: 'Rücksicht nehmen', en: 'Looking out for others' },
+  overtaking: { de: 'Sicher vorbei', en: 'Passing safely' },
+  parking: { de: 'Wo darf ich stehen?', en: 'Where may I stop?' },
+  motorway: { de: 'Schnell und sicher', en: 'Fast and safe' },
+  conditions: { de: 'Regen, Eis und Dunkelheit', en: 'Rain, ice and darkness' },
+  fitness: { de: 'Alkohol, Handy, Müdigkeit', en: 'Alcohol, phone, fatigue' },
+  emergency: { de: 'Züge, Unfälle, Erste Hilfe', en: 'Trains, crashes, first aid' },
+  environment: { de: 'Sparsam fahren', en: 'Driving economically' },
+  technology: { de: 'Dein Auto verstehen', en: 'Know your car' },
+  physics: { de: 'Anhalteweg rechnen', en: 'Stopping distances' },
+  load: { de: 'Sicher beladen', en: 'Loading safely' },
+  licence: { de: 'Regeln für Fahranfänger', en: 'Rules for new drivers' },
+};
+
+/** One district per topic, in a learning-friendly order. */
+export const UNITS: Unit[] = TOPICS.map((topic, i) => ({
+  id: `u${i + 1}`,
+  title: topic.title,
+  subtitle: SUBTITLES[topic.id],
+  topicIds: [topic.id],
+  color: COLORS[i % COLORS.length],
+}));

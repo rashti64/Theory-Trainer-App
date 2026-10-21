@@ -1,4 +1,4 @@
-import { PLACEHOLDER_CATALOG } from '@/content/placeholder-catalog';
+import { QUESTION_BANK } from '@/content/bank';
 import { UNITS, TOPICS } from '@/content/path';
 import { validateCatalog } from '@/domain/catalog';
 import { buildLesson, buildMistakesReview } from '@/domain/lesson';
@@ -6,7 +6,7 @@ import { addDays, isDue, mastery, reviewQuestion, type ProgressMap } from '@/dom
 import { currentStreak, lessonXp, recordActivity, totalXp, type DailyActivity } from '@/domain/streak';
 
 const TODAY = '2026-10-21';
-const pool = PLACEHOLDER_CATALOG.questions;
+const pool = QUESTION_BANK.questions;
 
 describe('spaced repetition', () => {
   it('moves a right answer up one box and schedules it later', () => {
@@ -100,9 +100,9 @@ describe('streak and XP', () => {
   });
 });
 
-describe('placeholder content', () => {
+describe('question bank', () => {
   it('is a valid catalog', () => {
-    expect(validateCatalog(PLACEHOLDER_CATALOG)).toEqual([]);
+    expect(validateCatalog(QUESTION_BANK)).toEqual([]);
   });
 
   it('only uses topics that exist on the path', () => {
@@ -122,10 +122,8 @@ describe('placeholder content', () => {
   });
 
   it('flags catalog problems', () => {
-    const broken = {
-      ...PLACEHOLDER_CATALOG,
-      questions: [{ ...pool[0], options: pool[0].options!.map((o) => ({ ...o, correct: false })) }],
-    };
-    expect(validateCatalog(broken)).toEqual([{ questionId: pool[0].id, message: 'No correct option.' }]);
+    const q = pool.find((x) => x.kind === 'multiple-choice')!;
+    const broken = { ...QUESTION_BANK, questions: [{ ...q, options: q.options!.map((o) => ({ ...o, correct: false })) }] };
+    expect(validateCatalog(broken)).toEqual([{ questionId: q.id, message: 'No correct option.' }]);
   });
 });

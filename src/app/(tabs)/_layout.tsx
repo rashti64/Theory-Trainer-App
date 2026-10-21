@@ -1,4 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 
 import { useAppState } from '@/state/app-state';
@@ -8,6 +9,7 @@ import { colors, fonts } from '@/ui/theme';
 export default function TabsLayout() {
   const { state } = useAppState();
   const locale = state.locale;
+  if (!state.onboardingDone) return <Redirect href="/onboarding" />;
   return (
     <Tabs
       screenOptions={{
@@ -27,8 +29,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="exam"
         options={{
-          title: t('exam', locale),
-          tabBarIcon: ({ color, size }) => <Ionicons name="clipboard" color={color as string} size={size} />,
+          title: t('readyTab', locale),
+          tabBarIcon: ({ color, size }) => <Ionicons name="speedometer" color={color as string} size={size} />,
         }}
       />
       <Tabs.Screen

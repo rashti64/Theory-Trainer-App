@@ -31,6 +31,9 @@ describe('sync', () => {
     activity: {},
     exams: [],
     unitLessons: {},
+    examDate: null,
+    onboardingDone: true,
+    entryTest: null,
   };
   const older: PersistedState = { ...base, updatedAt: '2026-10-20T10:00:00.000Z' };
   const newer: PersistedState = { ...base, updatedAt: '2026-10-21T10:00:00.000Z' };

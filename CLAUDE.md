@@ -13,9 +13,10 @@ The product owner is the repository owner. They approve every pull request and e
 ## Non-negotiables
 
 1. **No official content in the repo until the licence exists.** The official questions, images,
-   videos and translations belong to TÜV | DEKRA arge tp 21. Until the licence is signed we use
-   `src/content/placeholder-catalog.ts`, written by us. Never copy questions or media from other
-   apps, websites or PDFs.
+   videos and translations belong to TÜV | DEKRA arge tp 21. We use our own question bank in
+   `src/content/bank/` (written in our own words, covering the class B syllabus). Never copy
+   questions or media from other apps, websites or PDFs. Every new or changed question gets an
+   independent fact-check against StVO / FeV / StVZO before it ships.
 2. **Our own brand.** We follow Duolingo's design *principles* (vibrant colour, chunky rounded
    shapes, one clear path, characters that react, tactile buttons, sound and haptics) but never copy
    its name, mascot, colours, fonts, sounds or screens. Our palette comes from German road signage
@@ -35,7 +36,9 @@ src/
   app/        Screens (Expo Router). Every file is a route. No business logic here.
   domain/     Pure TypeScript: exam rules, spaced repetition, lessons, streaks, catalog validation.
               No React, no platform APIs. Everything here has unit tests.
-  content/    Learning path (units, topics) and the placeholder catalog.
+  content/    Learning path (one district per topic) and the question bank (`bank/`, one file per
+              topic, written with the helpers in `bank/build.ts`; signs and junction diagrams
+              are data, drawn by `ui/traffic-graphics.tsx`).
   state/      App state (React context + reducer), persisted on device; session + sync.
   lib/        Supabase client and sync.
   ui/         Design tokens, i18n strings, shared components, sound/haptic feedback.
@@ -48,6 +51,14 @@ docs/         Product and data documentation.
 ```
 
 Data flow: screen → `useAppState()` → reducer → domain functions → persisted state → (signed in) sync snapshot to Supabase.
+
+## Readiness programme
+
+Onboarding (exam date, daily goal) → entry test (20 questions, all topics) → daily plan to the exam
+date → lessons, with the 4th stop of each unit a unit test (80 % to pass) → mock exams with the
+official scoring → readiness score 0–100 (`domain/readiness.ts`). "Ready" requires all five
+criteria: 95 % coverage, 85 % mastery, 90 % on 5-point questions, no topic below 70 %, and the
+last 3 mock exams passed with at most 6 error points. Change targets only with a test.
 
 ## Commands
 

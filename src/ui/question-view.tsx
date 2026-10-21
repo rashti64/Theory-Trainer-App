@@ -10,6 +10,7 @@ import type { Mood3D as Mood } from './city3d/mascot3d';
 import { Mascot3DView } from './mascot-3d-view';
 import { parseNumberInput } from './number-input';
 import { NumberPad } from './number-pad';
+import { SignGraphic, SituationDiagram } from './traffic-graphics';
 import { colors, fonts, radius, space } from './theme';
 
 export function QuestionView({
@@ -63,6 +64,16 @@ export function QuestionView({
           contentFit="contain"
           accessibilityLabel={tr(question.media.alt, locale)}
         />
+      ) : null}
+      {question.media?.type === 'situation' ? (
+        <View style={styles.figure} accessible accessibilityRole="image" accessibilityLabel={tr(question.media.alt, locale)}>
+          <SituationDiagram situation={question.media.situation} locale={locale} size={290} />
+        </View>
+      ) : null}
+      {question.media?.type === 'sign' ? (
+        <View style={[styles.figure, styles.signCard]} accessible accessibilityRole="image" accessibilityLabel={tr(question.media.alt, locale)}>
+          <SignGraphic spec={question.media.sign} size={128} />
+        </View>
       ) : null}
 
       {question.kind === 'multiple-choice' ? (
@@ -160,4 +171,13 @@ const styles = StyleSheet.create({
   pointsText: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, color: colors.slateDark },
   options: { gap: space.md },
   media: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md, backgroundColor: colors.slateTint },
+  figure: { alignItems: 'center' },
+  signCard: {
+    alignSelf: 'center',
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 2.5,
+    borderColor: colors.line,
+    padding: space.md,
+  },
 });

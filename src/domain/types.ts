@@ -34,9 +34,38 @@ export type QuestionOption = {
   correct: boolean;
 };
 
+export type Arm = 'n' | 'e' | 's' | 'w';
+
+/** A junction drawn from above, for right-of-way questions. "You" always come from the south. */
+export type Situation = {
+  kind: 'crossroads' | 't-junction';
+  /** Sign facing traffic that arrives from this arm. */
+  signs?: Partial<Record<Arm, 'priority' | 'give-way' | 'stop'>>;
+  vehicles: {
+    arm: Arm;
+    kind: 'car' | 'bike' | 'bus';
+    /** Colour name used in the question text: blue, red, green, yellow, orange (= you). */
+    color: 'blue' | 'red' | 'green' | 'yellow' | 'orange';
+    turn: 'straight' | 'left' | 'right';
+    me?: boolean;
+  }[];
+  /** Arms with a pedestrian crossing the road. */
+  pedestrians?: Arm[];
+};
+
+/** German traffic signs we can draw (StVO numbers). 274 carries its speed, 310/311 a place name. */
+export type SignCode =
+  | '101' | '102' | '201' | '205' | '206' | '220' | '250' | '267' | '283' | '286' | '301' | '306' | '307'
+  | '274' | '310' | '311'
+  | '131' | '138' | '209' | '215' | '237' | '276' | '282' | '314' | '357' | '274.1' | '330.1';
+
+export type SignSpec = { code: SignCode; value?: number; place?: string };
+
 export type QuestionMedia =
   | { type: 'image'; uri: string; alt?: LocalizedText }
-  | { type: 'video'; uri: string; posterUri?: string };
+  | { type: 'video'; uri: string; posterUri?: string }
+  | { type: 'situation'; situation: Situation; alt: LocalizedText }
+  | { type: 'sign'; sign: SignSpec; alt: LocalizedText };
 
 export type Question = {
   /** Stable id, e.g. the official number "1.1.02-001" or "demo-007". */

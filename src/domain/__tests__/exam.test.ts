@@ -1,4 +1,4 @@
-import { PLACEHOLDER_CATALOG } from '@/content/placeholder-catalog';
+import { QUESTION_BANK } from '@/content/bank';
 import {
   assembleExam,
   CLASS_B_FIRST_LICENCE,
@@ -126,7 +126,7 @@ describe('scoreExam', () => {
 });
 
 describe('assembleExam', () => {
-  const pool = PLACEHOLDER_CATALOG.questions;
+  const pool = QUESTION_BANK.questions;
 
   it('draws 20 basic and 10 class questions', () => {
     const exam = assembleExam(pool, CLASS_B_FIRST_LICENCE, 42);

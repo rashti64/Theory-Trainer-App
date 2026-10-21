@@ -7,20 +7,18 @@ import 'expo-sqlite/localStorage/install';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 
-import { PLACEHOLDER_CATALOG } from '@/content/placeholder-catalog';
+import { QUESTION_BANK } from '@/content/bank';
 import type { ExamResult } from '@/domain/exam';
+import type { ExamRecord } from '@/domain/readiness';
 import { localToday, reviewQuestion, type ProgressMap } from '@/domain/srs';
 import { recordActivity, type DailyActivity, type DailyGoalXp } from '@/domain/streak';
 import type { Catalog, Locale, Question } from '@/domain/types';
 
 const STORAGE_KEY = 'theory-trainer/state/v1';
 
-export type ExamRecord = {
-  day: string;
-  passed: boolean;
-  errorPoints: number;
-  failReason: ExamResult['failReason'];
-};
+export type { ExamRecord };
+
+export type EntryTestResult = { day: string; correct: number; total: number };
 
 export type PersistedState = {
   locale: Locale;
@@ -30,8 +28,12 @@ export type PersistedState = {
   progress: ProgressMap;
   activity: DailyActivity;
   exams: ExamRecord[];
-  /** Lessons finished per unit of the learning path. */
+  /** Lessons finished per unit of the learning path (a failed unit test does not count). */
   unitLessons: Record<string, number | undefined>;
+  /** The learner's theory exam date (YYYY-MM-DD), if booked or planned. */
+  examDate: string | null;
+  onboardingDone: boolean;
+  entryTest: EntryTestResult | null;
   /** Last time the state changed, for last-write-wins sync. ISO timestamp. */
   updatedAt: string;
 };
@@ -44,12 +46,18 @@ const initialState: PersistedState = {
   activity: {},
   exams: [],
   unitLessons: {},
+  examDate: null,
+  onboardingDone: false,
+  entryTest: null,
   updatedAt: new Date(0).toISOString(),
 };
 
 type Action =
   | { type: 'answered'; question: Question; correct: boolean }
-  | { type: 'lesson-finished'; xp: number; unitId: string | null }
+  | { type: 'lesson-finished'; xp: number; unitId: string | null; counts?: boolean }
+  | { type: 'entry-test-finished'; correct: number; total: number; xp: number }
+  | { type: 'set-exam-date'; date: string | null }
+  | { type: 'finish-onboarding' }
   | { type: 'exam-finished'; result: ExamResult; xp: number }
   | { type: 'set-locale'; locale: Locale }
   | { type: 'set-daily-goal'; xp: DailyGoalXp }
@@ -79,7 +87,7 @@ function reducer(state: PersistedState, action: Action): PersistedState {
         ...state,
         ...stamp,
         activity: recordActivity(state.activity, today, action.xp),
-        unitLessons: action.unitId
+        unitLessons: action.unitId && action.counts !== false
           ? { ...state.unitLessons, [action.unitId]: (state.unitLessons[action.unitId] ?? 0) + 1 }
           : state.unitLessons,
       };
@@ -98,6 +106,17 @@ function reducer(state: PersistedState, action: Action): PersistedState {
           ...state.exams,
         ].slice(0, 20),
       };
+    case 'entry-test-finished':
+      return {
+        ...state,
+        ...stamp,
+        activity: recordActivity(state.activity, today, action.xp),
+        entryTest: { day: today, correct: action.correct, total: action.total },
+      };
+    case 'set-exam-date':
+      return { ...state, ...stamp, examDate: action.date };
+    case 'finish-onboarding':
+      return { ...state, ...stamp, onboardingDone: true };
     case 'set-locale':
       return { ...state, ...stamp, locale: action.locale };
     case 'set-daily-goal':
@@ -140,9 +159,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const replaceState = useCallback((next: PersistedState) => dispatch({ type: 'replace', state: next }), []);
 
-  // The licensed catalog will be loaded from the backend; until then, the placeholder set.
+  // Our own question bank; the licensed catalog can replace it later through the import pipeline.
   const value = useMemo(
-    () => ({ state, catalog: PLACEHOLDER_CATALOG, dispatch, replaceState }),
+    () => ({ state, catalog: QUESTION_BANK, dispatch, replaceState }),
     [state, replaceState],
   );
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -11,12 +11,22 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { SlideInDown, SlideInLeft, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { UNITS } from '@/content/path';
+import { TOPICS, UNITS } from '@/content/path';
+import { LESSONS_PER_UNIT, pathStatus } from '@/content/path-progress';
 import { isAnswerCorrect } from '@/domain/exam';
-import { buildLesson, buildMistakesReview } from '@/domain/lesson';
-import { localToday } from '@/domain/srs';
+import {
+  buildDailySession,
+  buildEntryTest,
+  buildLesson,
+  buildMistakesReview,
+  buildUnitTest,
+  UNIT_TEST_PASS,
+  unitTestPassed,
+} from '@/domain/lesson';
+import { readiness } from '@/domain/readiness';
+import { localToday, type ProgressMap } from '@/domain/srs';
 import { lessonXp } from '@/domain/streak';
-import type { Answer, Locale, Question } from '@/domain/types';
+import type { Answer, Catalog, Locale, Question } from '@/domain/types';
 import { useAppState } from '@/state/app-state';
 import { AppText, RaisedButton } from '@/ui/components';
 import { Confetti } from '@/ui/confetti';
@@ -29,6 +39,39 @@ import { QuestionView } from '@/ui/question-view';
 import { RoadProgress } from '@/ui/road-progress';
 import { colors, fonts, radius, space } from '@/ui/theme';
 
+type Mode = 'lesson' | 'unit-test' | 'entry-test' | 'review' | 'daily' | 'topic';
+
+/** What kind of session a route opens, and its questions. */
+function startSession(
+  route: string,
+  catalog: Catalog,
+  progress: ProgressMap,
+  unitLessons: Record<string, number | undefined>,
+  examDate: string | null,
+  exams: Parameters<typeof readiness>[0]['exams'],
+): { mode: Mode; questions: Question[] } {
+  const pool = catalog.questions;
+  const today = localToday();
+  if (route === 'review') return { mode: 'review', questions: buildMistakesReview(pool, progress) };
+  if (route === 'entry') return { mode: 'entry-test', questions: buildEntryTest(pool) };
+  if (route === 'daily') {
+    const order = TOPICS.map((t) => t.id);
+    const plan = readiness({ questions: pool, topicIds: order, progress, exams, today, examDate }).plan;
+    return { mode: 'daily', questions: buildDailySession(pool, order, progress, today, Math.min(plan.newPerDay, 10)) };
+  }
+  if (route.startsWith('topic-')) {
+    return { mode: 'topic', questions: buildLesson(pool, [route.slice(6)], progress, today, { size: 12 }) };
+  }
+  const unit = UNITS.find((u) => u.id === route);
+  if (!unit) return { mode: 'review', questions: [] };
+  const status = pathStatus(UNITS, unitLessons).find((st) => st.unit.id === unit.id);
+  // The last stop of every unit is a test: mixed questions from the whole unit, 80 % to pass.
+  if (status && !status.completed && status.lessonsDone === LESSONS_PER_UNIT - 1) {
+    return { mode: 'unit-test', questions: buildUnitTest(pool, unit.topicIds) };
+  }
+  return { mode: 'lesson', questions: buildLesson(pool, unit.topicIds, progress, today) };
+}
+
 export default function LessonScreen() {
   const { unitId } = useLocalSearchParams<{ unitId: string }>();
   const { state, catalog, dispatch } = useAppState();
@@ -36,11 +79,11 @@ export default function LessonScreen() {
   const locale = state.locale;
   const unit = UNITS.find((u) => u.id === unitId);
 
-  const [queue, setQueue] = useState<Question[]>(() =>
-    unitId === 'review' || !unit
-      ? buildMistakesReview(catalog.questions, state.progress)
-      : buildLesson(catalog.questions, unit.topicIds, state.progress, localToday()),
+  const [session] = useState(() =>
+    startSession(String(unitId), catalog, state.progress, state.unitLessons, state.examDate, state.exams),
   );
+  const isTest = session.mode === 'unit-test' || session.mode === 'entry-test';
+  const [queue, setQueue] = useState<Question[]>(session.questions);
   const [firstRoundSize] = useState(queue.length);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState<Answer | undefined>();
@@ -75,7 +118,8 @@ export default function LessonScreen() {
     if (!isRetry) {
       dispatch({ type: 'answered', question, correct });
       if (correct) setFirstTryCorrect((n) => n + 1);
-      else setQueue((q) => [...q, question]);
+      // In tests there is no second chance; in lessons, mistakes come back at the end.
+      else if (!isTest) setQueue((q) => [...q, question]);
     }
   }
 
@@ -88,7 +132,12 @@ export default function LessonScreen() {
       return;
     }
     const xp = lessonXp(firstTryCorrect, firstRoundSize);
-    dispatch({ type: 'lesson-finished', xp, unitId: unit ? unit.id : null });
+    if (session.mode === 'entry-test') {
+      dispatch({ type: 'entry-test-finished', correct: firstTryCorrect, total: firstRoundSize, xp });
+    } else {
+      const counts = session.mode === 'lesson' || (session.mode === 'unit-test' && unitTestPassed(firstTryCorrect, firstRoundSize));
+      dispatch({ type: 'lesson-finished', xp, unitId: unit && session.mode !== 'topic' ? unit.id : null, counts });
+    }
     feedback.complete();
     setFinishedXp(xp);
   }
@@ -108,6 +157,8 @@ export default function LessonScreen() {
         bestCombo={bestCombo}
         goalReached={goalBefore < state.dailyGoalXp && goalBefore + (finishedXp ?? 0) >= state.dailyGoalXp}
         locale={locale}
+        mode={session.mode}
+        passed={session.mode !== 'unit-test' || unitTestPassed(firstTryCorrect, firstRoundSize)}
       />
     );
   }
@@ -121,6 +172,11 @@ export default function LessonScreen() {
           <Ionicons name="close" size={30} color={colors.muted} />
         </Pressable>
         <RoadProgress value={Math.min(index + (revealed ? 1 : 0), firstRoundSize) / firstRoundSize} />
+        {isTest ? (
+          <View style={styles.testChip}>
+            <Ionicons name="school" size={15} color={colors.white} />
+          </View>
+        ) : null}
         {combo >= 2 ? (
           <Animated.View entering={ZoomIn.springify()} style={styles.comboChip}>
             <Ionicons name="flame" size={16} color="#F2541B" />
@@ -191,12 +247,16 @@ function LessonComplete({
   bestCombo,
   goalReached,
   locale,
+  mode,
+  passed,
 }: {
   xp: number;
   accuracy: number;
   bestCombo: number;
   goalReached: boolean;
   locale: Locale;
+  mode: Mode;
+  passed: boolean;
 }) {
   // Count the XP up, like a slot machine.
   const [shown, setShown] = useState(0);
@@ -208,7 +268,7 @@ function LessonComplete({
 
   return (
     <SafeAreaView style={[styles.screen, styles.complete]}>
-      <Mascot3DView mood="happy" size={150} />
+      <Mascot3DView mood={passed ? 'happy' : 'oops'} size={150} />
       {/* The car rolls over the finish line. */}
       <View style={styles.finishRoad}>
         <View style={styles.finishLine}>
@@ -221,7 +281,17 @@ function LessonComplete({
         </Animated.View>
       </View>
       <Animated.View entering={ZoomIn.springify().delay(150)}>
-        <AppText style={styles.completeTitle}>{t('lessonDone', locale)}</AppText>
+        <AppText style={styles.completeTitle}>
+          {mode === 'entry-test'
+            ? t('entryDone', locale)
+            : mode === 'unit-test'
+              ? t(passed ? 'unitTestPassed' : 'unitTestFailed', locale)
+              : t('lessonDone', locale)}
+        </AppText>
+        {mode === 'unit-test' && !passed ? (
+          <AppText style={styles.completeHint}>{t('unitTestNeed', locale, { n: Math.round(UNIT_TEST_PASS * 100) })}</AppText>
+        ) : null}
+        {mode === 'entry-test' ? <AppText style={styles.completeHint}>{t('entryHint', locale)}</AppText> : null}
       </Animated.View>
       {goalReached ? (
         <Animated.View entering={ZoomIn.springify().delay(500)} style={styles.goalBadge}>
@@ -234,8 +304,12 @@ function LessonComplete({
         <ResultTile label={t('accuracy', locale)} value={`${Math.round(accuracy * 100)}%`} icon="locate" color={colors.green} ink={colors.greenDark} />
         <ResultTile label={t('bestCombo', locale)} value={String(bestCombo)} icon="flame" color="#F2541B" ink="#B83A10" />
       </View>
-      <RaisedButton label={t('continue', locale)} onPress={() => router.back()} style={styles.completeButton} />
-      <Confetti burst={1} />
+      <RaisedButton
+        label={mode === 'entry-test' ? t('seeMyPlan', locale) : t('continue', locale)}
+        onPress={() => (mode === 'entry-test' ? router.replace('/exam') : router.back())}
+        style={styles.completeButton}
+      />
+      {passed ? <Confetti burst={1} /> : null}
     </SafeAreaView>
   );
 }
@@ -293,6 +367,15 @@ const styles = StyleSheet.create({
   comboBadge: { backgroundColor: '#F2541B', borderRadius: radius.round, paddingHorizontal: 10, paddingVertical: 3 },
   comboBadgeText: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 17, color: colors.white },
   complete: { alignItems: 'center', justifyContent: 'center', padding: space.xl, gap: space.lg },
+  completeHint: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 22, color: colors.slate, textAlign: 'center', marginTop: space.xs },
+  testChip: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.blue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   completeTitle: { fontFamily: fonts.black, fontSize: 32, lineHeight: 38, color: colors.asphalt, textAlign: 'center' },
   goalBadge: {
     flexDirection: 'row',
