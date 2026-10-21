@@ -1,0 +1,53 @@
+# Builds an installable Android app (APK) and publishes it as the
+# "android-latest" release, so it can be downloaded straight onto a phone.
+# Runs on every push to main and on demand (Actions → Android APK → Run workflow).
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - name: Generate the Android project
+        run: npx expo prebuild --platform android --no-install
+        env:
+          CI: 1
+      - name: Build the APK
+        working-directory: android
+        # Modern phones are 64-bit ARM; building only that keeps the app small and the build fast.
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+        env:
+          NODE_ENV: production
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk theory-trainer.apk
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest theory-trainer.apk \
+            --title "Theory Trainer for Android (build ${{ github.run_number }})" \
+            --notes "Built from ${{ github.sha }}. Open this page on your Android phone, download theory-trainer.apk and install it." \
+            --latest
