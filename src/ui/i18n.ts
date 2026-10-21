@@ -106,6 +106,14 @@ const strings = {
   },
   practiseAgain: { de: 'Nochmal üben', en: 'Practise again' },
   sound: { de: 'Töne', en: 'Sound effects' },
+  savedAccount: {
+    de: 'Dein Fortschritt wird privat in deinem Claude-Konto gespeichert, auf jedem Gerät.',
+    en: 'Your progress is saved privately in your Claude account, on every device.',
+  },
+  savedDevice: {
+    de: 'Dein Fortschritt wird auf diesem Gerät gespeichert.',
+    en: 'Your progress is saved on this device.',
+  },
   readyTab: { de: 'Bereit?', en: 'Ready?' },
   readyTitle: { de: 'Bin ich bereit?', en: 'Am I ready?' },
   levelStart: { de: 'Am Anfang', en: 'Just starting' },

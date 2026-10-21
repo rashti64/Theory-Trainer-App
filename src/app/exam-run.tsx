@@ -5,7 +5,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { assembleExam, isAnswerCorrect, scoreExam, type ExamResult } from '@/domain/exam';
@@ -13,6 +13,7 @@ import { examXp } from '@/domain/streak';
 import type { Answer, Locale, Question } from '@/domain/types';
 import { useAppState } from '@/state/app-state';
 import { AppText, Card, RaisedButton } from '@/ui/components';
+import { useConfirm } from '@/ui/confirm';
 import { t, tr } from '@/ui/i18n';
 import { formatNumber } from '@/ui/number-input';
 import { QuestionView } from '@/ui/question-view';
@@ -20,6 +21,7 @@ import { colors, radius, space } from '@/ui/theme';
 
 export default function ExamRunScreen() {
   const { state, catalog, dispatch } = useAppState();
+  const confirm = useConfirm();
   const locale = state.locale;
   const [questions] = useState(() => assembleExam(catalog.questions));
   const [index, setIndex] = useState(0);
@@ -34,7 +36,7 @@ export default function ExamRunScreen() {
   };
   const openCount = questions.filter((q) => !isAnswered(q)).length;
 
-  function handIn() {
+  async function handIn() {
     const finish = () => {
       const scored = scoreExam(questions, answers);
       for (const q of questions) {
@@ -44,10 +46,14 @@ export default function ExamRunScreen() {
       setResult(scored);
     };
     if (openCount === 0) return finish();
-    Alert.alert(t('finishExam', locale), t('unanswered', locale, { n: openCount }), [
-      { text: t('keepGoing', locale), style: 'cancel' },
-      { text: t('finishExam', locale), style: 'destructive', onPress: finish },
-    ]);
+    const ok = await confirm({
+      title: t('finishExam', locale),
+      body: t('unanswered', locale, { n: openCount }),
+      confirmLabel: t('finishExam', locale),
+      cancelLabel: t('keepGoing', locale),
+      destructive: true,
+    });
+    if (ok) finish();
   }
 
   if (result) return <ExamResultView result={result} questions={questions} answers={answers} locale={locale} />;
@@ -56,12 +62,16 @@ export default function ExamRunScreen() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.top}>
         <Pressable
-          onPress={() =>
-            Alert.alert(t('quitLesson', locale), t('quitLessonBody', locale), [
-              { text: t('keepGoing', locale), style: 'cancel' },
-              { text: t('quit', locale), style: 'destructive', onPress: () => router.back() },
-            ])
-          }
+          onPress={async () => {
+            const ok = await confirm({
+              title: t('quitLesson', locale),
+              body: t('quitLessonBody', locale),
+              confirmLabel: t('quit', locale),
+              cancelLabel: t('keepGoing', locale),
+              destructive: true,
+            });
+            if (ok) router.back();
+          }}
           accessibilityRole="button"
           accessibilityLabel={t('close', locale)}
           hitSlop={12}>

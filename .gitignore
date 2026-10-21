@@ -44,3 +44,7 @@ example
 
 # local env files with real keys
 .env
+
+# web build and published page
+dist/
+artifact/

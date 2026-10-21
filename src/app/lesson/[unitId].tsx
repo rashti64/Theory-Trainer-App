@@ -7,7 +7,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { SlideInDown, SlideInLeft, ZoomIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,6 +30,7 @@ import type { Answer, Catalog, Locale, Question } from '@/domain/types';
 import { useAppState } from '@/state/app-state';
 import { AppText, RaisedButton } from '@/ui/components';
 import { Confetti } from '@/ui/confetti';
+import { useConfirm } from '@/ui/confirm';
 import { reaction, t, tr } from '@/ui/i18n';
 import { StepCar } from '@/ui/sprites';
 import { useFeedback } from '@/ui/feedback';
@@ -76,6 +77,7 @@ export default function LessonScreen() {
   const { unitId } = useLocalSearchParams<{ unitId: string }>();
   const { state, catalog, dispatch } = useAppState();
   const feedback = useFeedback();
+  const confirm = useConfirm();
   const locale = state.locale;
   const unit = UNITS.find((u) => u.id === unitId);
 
@@ -142,11 +144,15 @@ export default function LessonScreen() {
     setFinishedXp(xp);
   }
 
-  function quit() {
-    Alert.alert(t('quitLesson', locale), t('quitLessonBody', locale), [
-      { text: t('keepGoing', locale), style: 'cancel' },
-      { text: t('quit', locale), style: 'destructive', onPress: () => router.back() },
-    ]);
+  async function quit() {
+    const ok = await confirm({
+      title: t('quitLesson', locale),
+      body: t('quitLessonBody', locale),
+      confirmLabel: t('quit', locale),
+      cancelLabel: t('keepGoing', locale),
+      destructive: true,
+    });
+    if (ok) router.back();
   }
 
   if (finishedXp !== null || queue.length === 0) {

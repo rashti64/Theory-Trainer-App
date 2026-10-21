@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { localToday } from '@/domain/srs';
@@ -7,8 +7,10 @@ import { currentStreak, DAILY_GOAL_OPTIONS, totalXp } from '@/domain/streak';
 import type { Locale } from '@/domain/types';
 import { supabase } from '@/lib/supabase';
 import { useAppState } from '@/state/app-state';
+import { useSaveStatus } from '@/state/cloud-save';
 import { useSession } from '@/state/session';
 import { AppText, Card, RaisedButton } from '@/ui/components';
+import { useConfirm } from '@/ui/confirm';
 import { t } from '@/ui/i18n';
 import { colors, radius, space } from '@/ui/theme';
 
@@ -20,6 +22,8 @@ const LOCALES: { id: Locale; label: string }[] = [
 export default function ProfileScreen() {
   const { state, dispatch } = useAppState();
   const { session, backendReady } = useSession();
+  const confirm = useConfirm();
+  const { status: saveStatus } = useSaveStatus();
   const locale = state.locale;
 
   return (
@@ -70,7 +74,10 @@ export default function ProfileScreen() {
         </Section>
 
         <Section title={t('account', locale)}>
-          {!backendReady ? (
+          <AppText color={saveStatus === 'account' ? colors.greenDark : colors.slate}>
+            {t(saveStatus === 'account' ? 'savedAccount' : 'savedDevice', locale)}
+          </AppText>
+          {saveStatus === 'account' ? null : !backendReady ? (
             <AppText color={colors.slate}>{t('backendMissing', locale)}</AppText>
           ) : session ? (
             <>
@@ -81,20 +88,22 @@ export default function ProfileScreen() {
               <RaisedButton
                 label={t('deleteAccount', locale)}
                 tone="danger"
-                onPress={() =>
-                  Alert.alert(t('deleteAccount', locale), t('deleteAccountBody', locale), [
-                    { text: t('keepGoing', locale), style: 'cancel' },
-                    {
-                      text: t('deleteAccount', locale),
-                      style: 'destructive',
-                      onPress: async () => {
-                        const { error } = (await supabase?.rpc('delete_my_account')) ?? {};
-                        if (error) return Alert.alert(t('deleteFailed', locale));
-                        await supabase?.auth.signOut();
-                      },
-                    },
-                  ])
-                }
+                onPress={async () => {
+                  const ok = await confirm({
+                    title: t('deleteAccount', locale),
+                    body: t('deleteAccountBody', locale),
+                    confirmLabel: t('deleteAccount', locale),
+                    cancelLabel: t('keepGoing', locale),
+                    destructive: true,
+                  });
+                  if (!ok) return;
+                  const { error } = (await supabase?.rpc('delete_my_account')) ?? {};
+                  if (error) {
+                    await confirm({ title: t('deleteFailed', locale), confirmLabel: t('close', locale) });
+                    return;
+                  }
+                  await supabase?.auth.signOut();
+                }}
               />
             </>
           ) : (
