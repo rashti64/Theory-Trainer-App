@@ -23,7 +23,7 @@ export const SIGNS = [
     sign: { spec: { code: '206' }, alt: ['Rotes Achteck mit STOP', 'Red octagon with STOP'] },
     options: [
       ['Anhalten und Vorfahrt gewähren', 'Stop and give way', true],
-      ['Nur bei Gegenverkehr anhalten', 'Stop only if there is cross traffic', false],
+      ['Nur anhalten, wenn Querverkehr kommt', 'Stop only if there is cross traffic', false],
       ['Einfahrt verboten', 'No entry', false],
     ],
     why: ['Am Stoppschild immer vollständig anhalten – an der Haltlinie, sonst dort, wo man die Straße einsehen kann.', 'Always stop completely at a stop sign – at the stop line, or where you can see the crossing road.'],
@@ -219,11 +219,11 @@ export const SIGNS = [
     q: WHAT,
     sign: { spec: { code: '237' }, alt: ['Blaues rundes Schild mit weißem Fahrrad', 'Round blue sign with a white bicycle'] },
     options: [
-      ['Radweg: Radfahrer müssen ihn benutzen, andere Fahrzeuge dürfen ihn nicht befahren', 'Cycle path: cyclists must use it, other vehicles must not drive on it', true],
+      ['Radweg: Radfahrer (und E-Scooter) müssen ihn benutzen, Autos dürfen ihn nicht befahren', 'Cycle path: cyclists (and e-scooters) must use it, cars must not drive on it', true],
       ['Radfahren verboten', 'No cycling', false],
       ['Hier dürfen Autos mit Fahrradträger parken', 'Cars with bike racks may park here', false],
     ],
-    why: ['Blaue runde Schilder schreiben etwas vor. Dieses ordnet einen Sonderweg nur für Radfahrer an.', 'Round blue signs give an order. This one creates a path reserved for cyclists.'],
+    why: ['Blaue runde Schilder schreiben etwas vor. Dieses ordnet einen Sonderweg für Radfahrer an; E-Scooter müssen ihn ebenfalls nutzen. Anderen Verkehr kann nur ein Zusatzzeichen erlauben.', 'Round blue signs give an order. This one creates a special path for cyclists; e-scooters must use it too. Other traffic is only allowed if an extra plate says so.'],
   }),
   t.mc({
     id: 'zch-20',

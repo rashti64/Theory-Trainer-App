@@ -50,7 +50,7 @@ export const LICENCE = [
       ['Höchstens 1 Punkt im Fahreignungsregister', 'At most 1 point in the register', true],
       ['Es reicht, wenn die Person volljährig ist', 'Being an adult is enough', false],
     ],
-    why: ['Die Begleitperson muss im Antrag namentlich eingetragen sein und darf höchstens 0,5 Promille haben.', 'The companion must be named on the application and may have at most 0.5 per mille.'],
+    why: ['Die Begleitperson muss im Antrag namentlich eingetragen sein und muss weniger als 0,5 Promille haben und darf nicht unter Drogeneinfluss stehen.', 'The companion must be named on the application, must have less than 0.5 per mille and must not be under the influence of drugs.'],
   }),
   t.mc({
     id: 'fsc-06',

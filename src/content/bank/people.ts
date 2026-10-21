@@ -31,30 +31,30 @@ export const PEOPLE = [
     q: ['Ein Linienbus hält mit eingeschaltetem Warnblinklicht an einer Haltestelle. Wie dürfen Sie vorbeifahren?', 'A bus is stopped at a bus stop with its hazard lights on. How may you pass?'],
     options: [
       ['Nur mit Schrittgeschwindigkeit', 'Only at walking pace', true],
-      ['Auch im Gegenverkehr nur mit Schrittgeschwindigkeit', 'At walking pace in the opposite direction too', true],
+      ['Auch im Gegenverkehr auf derselben Fahrbahn nur mit Schrittgeschwindigkeit', 'At walking pace in the opposite direction too, on the same carriageway', true],
       ['Normal, wenn ich hupe', 'At normal speed if I sound the horn', false],
     ],
-    why: ['Fahrgäste dürfen nicht gefährdet werden; notfalls müssen Sie warten. Das gilt in beiden Richtungen.', 'Passengers must not be endangered; if necessary you must wait. This applies in both directions.'],
+    why: ['Fahrgäste dürfen nicht gefährdet werden; notfalls müssen Sie warten. Das gilt auch für den Gegenverkehr auf derselben Fahrbahn, nicht bei baulich getrennten Fahrbahnen.', 'Passengers must not be endangered; if necessary you must wait. This also applies to oncoming traffic on the same carriageway, but not across a separated carriageway.'],
   }),
   t.mc({
     id: 'mns-04',
     points: 4,
-    q: ['Ein Bus nähert sich einer Haltestelle und hat das Warnblinklicht eingeschaltet. Was gilt?', 'A bus approaches a stop with its hazard lights on. What applies?'],
+    q: ['Ein Linienbus oder Schulbus nähert sich einer Haltestelle und hat das Warnblinklicht eingeschaltet. Was gilt?', 'A scheduled bus or school bus approaches a stop with its hazard lights on. What applies?'],
     options: [
       ['Ich darf ihn nicht überholen', 'I must not overtake it', true],
       ['Ich darf ihn überholen, wenn ich mich beeile', 'I may overtake if I hurry', false],
     ],
-    why: ['Busse, die sich mit Warnblinklicht einer Haltestelle nähern, dürfen nicht überholt werden.', 'Buses approaching a stop with hazard lights on must not be overtaken.'],
+    why: ['Linien- und Schulbusse, die sich mit Warnblinklicht einer Haltestelle nähern, dürfen nicht überholt werden.', 'Scheduled and school buses approaching a stop with hazard lights on must not be overtaken.'],
   }),
   t.mc({
     id: 'mns-05',
     points: 4,
-    q: ['Ein Bus will von der Haltestelle anfahren und blinkt. Was müssen Sie innerorts tun?', 'A bus wants to pull away from a stop and is indicating. What must you do in town?'],
+    q: ['Ein Linienbus oder Schulbus will von einer gekennzeichneten Haltestelle abfahren und blinkt. Was müssen Sie tun?', 'A scheduled bus or school bus wants to pull away from a marked stop and is indicating. What must you do?'],
     options: [
       ['Ihm das Abfahren ermöglichen, wenn nötig warten', 'Let it pull away, waiting if necessary', true],
       ['Schnell vorbeifahren, bevor er losfährt', 'Pass quickly before it moves', false],
     ],
-    why: ['Innerorts müssen Sie Linienbussen das Abfahren von gekennzeichneten Haltestellen ermöglichen.', 'In towns you must let buses pull away from marked stops.'],
+    why: ['Linienbussen und Schulbussen müssen Sie das Abfahren von gekennzeichneten Haltestellen ermöglichen – innerorts wie außerorts. Wenn nötig, warten Sie.', 'You must let scheduled and school buses pull away from marked stops – inside and outside built-up areas. Wait if necessary.'],
   }),
   t.num({
     id: 'mns-06',
@@ -174,10 +174,10 @@ export const PEOPLE = [
     points: 3,
     q: ['Ein etwa siebenjähriges Kind fährt mit dem Fahrrad auf dem Gehweg. Ist das erlaubt?', 'A child of about seven is cycling on the pavement. Is that allowed?'],
     options: [
-      ['Ja, Kinder bis 8 Jahre müssen sogar auf dem Gehweg fahren', 'Yes, children up to 8 must even ride on the pavement', true],
+      ['Ja, Kinder bis 8 Jahre müssen auf dem Gehweg fahren (oder auf einem baulich getrennten Radweg)', 'Yes, children up to 8 must ride on the pavement (or on a physically separated cycle path)', true],
       ['Nein, Fahrräder gehören immer auf die Fahrbahn', 'No, bicycles always belong on the road', false],
     ],
-    why: ['Kinder bis zum vollendeten 8. Lebensjahr müssen den Gehweg benutzen, bis 10 Jahre dürfen sie es. Rechnen Sie damit, dass sie plötzlich auf die Fahrbahn fahren.', 'Children up to their 8th birthday must use the pavement, and up to 10 they may. Expect them to ride onto the road suddenly.'],
+    why: ['Kinder bis zum vollendeten 8. Lebensjahr müssen den Gehweg benutzen, außer es gibt einen baulich getrennten Radweg; bis 10 Jahre dürfen sie den Gehweg benutzen. Rechnen Sie damit, dass sie plötzlich auf die Fahrbahn fahren.', 'Children up to their 8th birthday must use the pavement unless there is a physically separated cycle path; up to 10 they may use the pavement. Expect them to ride onto the road suddenly.'],
   }),
   t.mc({
     id: 'mns-18',

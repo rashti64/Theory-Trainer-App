@@ -20,7 +20,7 @@ export const PARKING = [
     q: ['Bis zu wie vielen Metern vor und hinter Kreuzungen und Einmündungen ist das Parken verboten (gemessen von den Schnittpunkten der Fahrbahnkanten)?', 'Up to how many metres before and after junctions is parking forbidden (measured from where the kerb lines meet)?'],
     value: 5,
     unit: M,
-    why: ['Je 5 m – damit Abbieger und Fußgänger die Kreuzung überblicken können.', '5 m on each side – so turning drivers and pedestrians can see the junction.'],
+    why: ['Je 5 m – damit Abbieger und Fußgänger die Kreuzung überblicken können. Verläuft rechts ein baulich getrennter Radweg, sind es vor der Kreuzung 8 m.', '5 m on each side – so turning drivers and pedestrians can see the junction. If a physically separated cycle path runs on the right, it is 8 m before the junction.'],
   }),
   t.num({
     id: 'prk-03',
@@ -137,7 +137,7 @@ export const PARKING = [
     points: 3,
     q: ['Dürfen Sie Ihr Auto auf dem Gehweg parken?', 'May you park your car on the pavement?'],
     options: [
-      ['Nur wenn ein Verkehrszeichen das ausdrücklich erlaubt', 'Only if a traffic sign expressly allows it', true],
+      ['Nur wenn Verkehrszeichen oder Parkflächenmarkierungen es ausdrücklich erlauben', 'Only if traffic signs or parking-bay markings expressly allow it', true],
       ['Ja, wenn für Fußgänger noch 1 m Platz bleibt', 'Yes, if 1 m is left for pedestrians', false],
       ['Ja, wenn ich die Warnblinkanlage einschalte', 'Yes, if I switch on the hazard lights', false],
     ],

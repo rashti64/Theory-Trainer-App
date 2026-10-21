@@ -56,7 +56,7 @@ export const FITNESS = [
       ['Mit starkem Kaffee', 'With strong coffee', false],
       ['Mit frischer Luft und Sport', 'With fresh air and exercise', false],
     ],
-    why: ['Der Körper baut nur etwa 0,1 bis 0,2 Promille pro Stunde ab. Kaffee macht wacher, aber nicht nüchterner.', 'The body breaks down only about 0.1–0.2 per mille per hour. Coffee makes you more alert, not more sober.'],
+    why: ['Der Körper baut nur etwa 0,1 Promille pro Stunde ab. Kaffee macht wacher, aber nicht nüchterner.', 'The body breaks down only about 0.1 per mille per hour. Coffee makes you more alert, not more sober.'],
   }),
   t.mc({
     id: 'fit-06',
@@ -66,7 +66,7 @@ export const FITNESS = [
       ['3,5 Nanogramm THC pro Milliliter Blut', '3.5 nanograms of THC per millilitre of blood', true],
       ['Es gibt keinen Grenzwert, Cannabis ist legal', 'There is no limit; cannabis is legal', false],
     ],
-    why: ['Seit August 2024 gilt 3,5 ng/ml. Für Fahranfänger und unter 21 gilt ein absolutes Cannabisverbot; Mischkonsum mit Alkohol wird besonders hart bestraft.', 'Since August 2024 the limit is 3.5 ng/ml. Novice drivers and under-21s may not use cannabis at all; mixing with alcohol is punished especially hard.'],
+    why: ['Seit August 2024 gilt 3,5 ng/ml. Fahranfänger in der Probezeit und unter 21 dürfen nicht unter Cannabiseinfluss fahren; Mischkonsum mit Alkohol wird besonders hart bestraft.', 'Since August 2024 the limit is 3.5 ng/ml. Novice drivers on probation and under-21s must not drive under the influence of cannabis; mixing with alcohol is punished especially hard.'],
   }),
   t.mc({
     id: 'fit-07',

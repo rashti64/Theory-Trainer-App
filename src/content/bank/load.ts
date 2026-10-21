@@ -24,7 +24,7 @@ export const LOAD = [
   t.mc({
     id: 'lad-03',
     points: 3,
-    q: ['Ihre Ladung ragt mehr als 1 m über die Rückleuchten hinaus. Was müssen Sie tun?', 'Your load sticks out more than 1 m beyond the rear lights. What must you do?'],
+    q: ['Ihre Ladung ragt mehr als 1 m über die Rückstrahler hinaus. Was müssen Sie tun?', 'Your load sticks out more than 1 m beyond the rear reflectors. What must you do?'],
     options: [
       ['Das Ende kenntlich machen, z. B. mit einer hellroten Fahne oder einem Schild (mindestens 30 × 30 cm)', 'Mark the end, e.g. with a bright red flag or sign (at least 30 × 30 cm)', true],
       ['Nichts, solange ich langsam fahre', 'Nothing, as long as I drive slowly', false],
@@ -144,7 +144,7 @@ export const LOAD = [
     q: ['Wie weit darf Ladung nach hinten hinausragen, wenn Sie höchstens 100 km weit fahren?', 'How far may a load stick out at the back if you are driving no more than 100 km?'],
     value: 3,
     unit: M,
-    why: ['Bis 100 km Fahrstrecke darf Ladung bis zu 3 m nach hinten hinausragen, sonst bis zu 1,5 m. Ab 1 m über die Rückleuchten hinaus muss sie gekennzeichnet sein.', 'For trips up to 100 km the load may stick out up to 3 m, otherwise up to 1.5 m. Beyond 1 m past the rear lights it must be marked.'],
+    why: ['Bis 100 km Fahrstrecke darf Ladung bis zu 3 m nach hinten hinausragen, sonst bis zu 1,5 m. Ragt sie mehr als 1 m über die Rückstrahler hinaus, muss sie gekennzeichnet sein.', 'For trips up to 100 km the load may stick out up to 3 m, otherwise up to 1.5 m. If it sticks out more than 1 m beyond the rear reflectors, it must be marked.'],
   }),
   t.mc({
     id: 'lad-15',
