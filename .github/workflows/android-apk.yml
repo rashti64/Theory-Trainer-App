@@ -1,9 +1,10 @@
 # Builds the Android app.
-# - Every push to main: an installable APK, published as the "android-latest" release,
-#   so it can be downloaded straight onto a phone.
-# - Every version tag (v1.0.0, v1.0.1, …): additionally the Play Store bundle (.aab),
-#   published as a release with that tag, ready to upload in Play Console.
-# Both are signed with the Play upload key when the UPLOAD_KEY_PASSWORD secret is set
+# Every push to main publishes the "android-latest" release with:
+# - theory-trainer.apk: installable straight onto a phone;
+# - theory-trainer-<version>-<versionCode>.aab: the Play Store bundle, ready to upload
+#   in Play Console (only when the UPLOAD_KEY_PASSWORD secret is set).
+# Version tags (v1.0.0, …) additionally get a release of their own.
+# Builds are signed with the Play upload key when UPLOAD_KEY_PASSWORD is set
 # (the key itself is stored encrypted in store/upload-keystore.jks.enc).
 name: Android
 
@@ -60,7 +61,7 @@ jobs:
         env:
           NODE_ENV: production
       - name: Build the Play Store bundle
-        if: env.IS_TAG == 'true'
+        if: env.UPLOAD_KEY_PASSWORD != ''
         working-directory: android
         run: ./gradlew bundleRelease --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
         env:
@@ -70,6 +71,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk theory-trainer.apk
+          files="theory-trainer.apk"
+          if [ -n "$UPLOAD_KEY_PASSWORD" ]; then
+            version=$(node -p "require('./app.json').expo.version")
+            aab="theory-trainer-${version}-${{ github.run_number }}.aab"
+            cp android/app/build/outputs/bundle/release/app-release.aab "$aab"
+            files="$files $aab"
+          fi
           if [ "$IS_TAG" = "true" ]; then
             cp android/app/build/outputs/bundle/release/app-release.aab "theory-trainer-${GITHUB_REF_NAME}.aab"
             gh release create "$GITHUB_REF_NAME" "theory-trainer-${GITHUB_REF_NAME}.aab" theory-trainer.apk \
@@ -78,8 +86,8 @@ jobs:
               --latest=false
           else
             gh release delete android-latest --yes --cleanup-tag || true
-            gh release create android-latest theory-trainer.apk \
+            gh release create android-latest $files \
               --title "Theory Trainer for Android (build ${{ github.run_number }})" \
-              --notes "Built from ${{ github.sha }}. Open this page on your Android phone, download theory-trainer.apk and install it." \
+              --notes "Built from ${{ github.sha }}. Phone: download theory-trainer.apk and install it. Play Store: upload the .aab file in Play Console." \
               --latest
           fi
