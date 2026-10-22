@@ -146,7 +146,7 @@ const strings = {
   daysLeft: { de: 'Noch {n} Tage bis zur Prüfung', en: '{n} days to your exam' },
   inWeeks: { de: 'In {n} Wochen', en: 'In {n} weeks' },
   examOn: { de: 'Prüfungstermin: {date}', en: 'Exam date: {date}' },
-  todayPlan: { de: 'Heute: {fresh} neue Fragen und {due} Wiederholungen.', en: 'Today: {fresh} new questions and {due} reviews.' },
+  todayPlan: { de: 'Heute dran: {fresh} neu · {due} zum Wiederholen', en: 'Today: {fresh} new · {due} to review' },
   startToday: { de: 'Heutigen Plan starten', en: "Start today's plan" },
   criteriaTitle: { de: 'Die 5 Kriterien', en: 'The 5 criteria' },
   critCoverage: { de: 'Mindestens {target} % aller Fragen gesehen', en: 'Seen at least {target} % of all questions' },
