@@ -1,5 +1,6 @@
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { localToday } from '@/domain/srs';
@@ -14,7 +15,9 @@ import { useConfirm } from '@/ui/confirm';
 import { t } from '@/ui/i18n';
 import { colors, radius, space } from '@/ui/theme';
 
-const LOCALES: { id: Locale; label: string }[] = [
+const PRIVACY_URL = 'https://rashti64.github.io/Theory-Trainer-App/privacy/';
+
+const LOCALES:{ id: Locale; label: string }[] = [
   { id: 'de', label: 'Deutsch' },
   { id: 'en', label: 'English' },
 ];
@@ -112,6 +115,20 @@ export default function ProfileScreen() {
               <RaisedButton label={t('signIn', locale)} onPress={() => router.push('/auth')} />
             </>
           )}
+        </Section>
+
+        <Section title={t('about', locale)}>
+          <AppText variant="small" color={colors.slate}>
+            {t('disclaimer', locale)}
+          </AppText>
+          <Pressable accessibilityRole="link" onPress={() => Linking.openURL(PRIVACY_URL)}>
+            <AppText variant="label" color={colors.blue}>
+              {t('privacyLink', locale)}
+            </AppText>
+          </Pressable>
+          <AppText variant="small" color={colors.muted}>
+            {`Version ${Constants.expoConfig?.version ?? ''}`}
+          </AppText>
         </Section>
       </ScrollView>
     </SafeAreaView>

@@ -114,6 +114,12 @@ const strings = {
     de: 'Dein Fortschritt wird auf diesem Gerät gespeichert.',
     en: 'Your progress is saved on this device.',
   },
+  about: { de: 'Über die App', en: 'About' },
+  disclaimer: {
+    de: 'Theory Trainer ist eine unabhängige Lern-App. Sie ist kein offizielles Angebot und steht in keiner Verbindung zu TÜV, DEKRA, der arge tp 21 oder einer Behörde. Die Fragen sind eigene Übungsfragen, nicht der amtliche Fragenkatalog. Ohne Gewähr: Maßgeblich sind die StVO und deine Fahrschule.',
+    en: 'Theory Trainer is an independent learning app. It is not an official service and is not affiliated with TÜV, DEKRA, arge tp 21 or any authority. The questions are our own practice questions, not the official question catalogue. No guarantee: the German road traffic regulations (StVO) and your driving school are authoritative.',
+  },
+  privacyLink: { de: 'Datenschutzerklärung', en: 'Privacy policy' },
   readyTab: { de: 'Bereit?', en: 'Ready?' },
   readyTitle: { de: 'Bin ich bereit?', en: 'Am I ready?' },
   levelStart: { de: 'Am Anfang', en: 'Just starting' },

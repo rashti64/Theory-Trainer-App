@@ -1,15 +1,20 @@
-# Builds an installable Android app (APK) and publishes it as the
-# "android-latest" release, so it can be downloaded straight onto a phone.
-# Runs on every push to main and on demand (Actions → Android APK → Run workflow).
-name: Android APK
+# Builds the Android app.
+# - Every push to main: an installable APK, published as the "android-latest" release,
+#   so it can be downloaded straight onto a phone.
+# - Every version tag (v1.0.0, v1.0.1, …): additionally the Play Store bundle (.aab),
+#   published as a release with that tag, ready to upload in Play Console.
+# Both are signed with the Play upload key when the UPLOAD_KEY_PASSWORD secret is set
+# (the key itself is stored encrypted in store/upload-keystore.jks.enc).
+name: Android
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
+    tags: ['v*']
 
 concurrency:
-  group: android-apk
+  group: android-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -18,7 +23,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
+    env:
+      UPLOAD_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+      IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,19 +43,43 @@ jobs:
         run: npx expo prebuild --platform android --no-install
         env:
           CI: 1
+      - name: Set version and signing
+        run: |
+          if [ -n "$UPLOAD_KEY_PASSWORD" ]; then
+            openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
+              -in store/upload-keystore.jks.enc -out "$RUNNER_TEMP/upload.jks" -pass env:UPLOAD_KEY_PASSWORD
+            node scripts/android-release-signing.mjs "${{ github.run_number }}" "$RUNNER_TEMP/upload.jks"
+          else
+            [ "$IS_TAG" = "true" ] && { echo "::error::Set the UPLOAD_KEY_PASSWORD secret before tagging a Play release"; exit 1; }
+            node scripts/android-release-signing.mjs "${{ github.run_number }}"
+          fi
       - name: Build the APK
         working-directory: android
-        # Modern phones are 64-bit ARM; building only that keeps the app small and the build fast.
+        # Modern phones are 64-bit ARM; building only that keeps the APK small and the build fast.
         run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
         env:
           NODE_ENV: production
-      - name: Publish the release
+      - name: Build the Play Store bundle
+        if: env.IS_TAG == 'true'
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
+        env:
+          NODE_ENV: production
+      - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp android/app/build/outputs/apk/release/app-release.apk theory-trainer.apk
-          gh release delete android-latest --yes --cleanup-tag || true
-          gh release create android-latest theory-trainer.apk \
-            --title "Theory Trainer for Android (build ${{ github.run_number }})" \
-            --notes "Built from ${{ github.sha }}. Open this page on your Android phone, download theory-trainer.apk and install it." \
-            --latest
+          if [ "$IS_TAG" = "true" ]; then
+            cp android/app/build/outputs/bundle/release/app-release.aab "theory-trainer-${GITHUB_REF_NAME}.aab"
+            gh release create "$GITHUB_REF_NAME" "theory-trainer-${GITHUB_REF_NAME}.aab" theory-trainer.apk \
+              --title "Theory Trainer ${GITHUB_REF_NAME} (version code ${{ github.run_number }})" \
+              --notes "Upload the .aab file in Play Console (Testing → Closed testing → Create new release)." \
+              --latest=false
+          else
+            gh release delete android-latest --yes --cleanup-tag || true
+            gh release create android-latest theory-trainer.apk \
+              --title "Theory Trainer for Android (build ${{ github.run_number }})" \
+              --notes "Built from ${{ github.sha }}. Open this page on your Android phone, download theory-trainer.apk and install it." \
+              --latest
+          fi
